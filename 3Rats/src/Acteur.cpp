@@ -279,7 +279,10 @@ Acteur::Acteur()
 
 	file_path = "../meta_textures/place_holder.png";
 	item_search_id = 0;
+	item_hold_id = 0;
 	has_goal = false;
+	holds_item = false;
+	wants_enter_door = false;
 
 	is_moving = false;
 
@@ -296,10 +299,7 @@ Acteur::Acteur()
 	searchCounter /= 100.0f;
 }
 
-Acteur::~Acteur()
-{
-	SDL_DestroyTexture(texture);
-}
+Acteur::~Acteur() { }
 
 
 void Acteur::set_cords_frames(int x, int y, int framesX, int framesY)

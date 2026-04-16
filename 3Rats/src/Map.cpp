@@ -237,7 +237,7 @@ void Map::set_textures()
                 inspected_tile.is_exit = false;
                 inspected_tile.is_entrance = false;
                 inspected_tile.is_hole = false;
-                inspected_tile.set_texture("/Users/lukas/Documents/vscode_repo/projects/3Rats/3Rats/maze_textures/wooden_floor.png");
+                inspected_tile.set_texture("../maze_textures/wooden_floor.png");
                 break;
 
             case 15:

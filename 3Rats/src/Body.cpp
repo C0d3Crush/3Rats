@@ -4,9 +4,9 @@
 
 
 
-Body::Body() { }
+Body::Body() : texture(nullptr) { }
 
-Body::~Body() { SDL_DestroyTexture(texture); }
+Body::~Body() { if (texture) SDL_DestroyTexture(texture); }
 
 void Body::update(float delta) { }
 
