@@ -1,5 +1,9 @@
 #include "Map.h"
 #include "Logger.h"
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 
 Map::Map()
 {
@@ -364,8 +368,10 @@ void Map::generate_maze(bool item_generation, bool entity_generation)
     if (phantom)
         data[cy][cx] = 0;
 
-    // Walk from each door. Temporarily mark the starting door with 99 so the
-    // walk is forced to reach a *different* door or an already-carved tile.
+    // Walk from each door.
+    // After each walk, carved tiles (3-6) are promoted to permanent markers
+    // (100=horiz, 101=vert) so subsequent walks can connect quickly to the
+    // existing network rather than hunting for a specific door tile.
     for (int side = 0; side < 4; side++)
     {
         if (!door_array[side].get_active()) continue;
@@ -379,9 +385,25 @@ void Map::generate_maze(bool item_generation, bool entity_generation)
             map_generation_try++;
 
         data[dy][dx] = 0;  // restore so later walks can connect here
+
+        // Promote this walk's tiles to permanent so walk N+1 can reach them
+        for (int h = 1; h <= height; h++)
+            for (int w = 1; w <= width; w++)
+            {
+                if (data[h][w] == 3 || data[h][w] == 4) data[h][w] = 100;
+                else if (data[h][w] == 5 || data[h][w] == 6) data[h][w] = 101;
+            }
     }
 
-    // Convert phantom centre back to a regular floor tile
+    // Restore permanent markers to direction values for texturing
+    for (int h = 1; h <= height; h++)
+        for (int w = 1; w <= width; w++)
+        {
+            if      (data[h][w] == 100) data[h][w] = 3;
+            else if (data[h][w] == 101) data[h][w] = 5;
+        }
+
+    // Convert phantom centre to regular floor if still uncarved
     if (phantom && data[cy][cx] == 0)
         data[cy][cx] = 3;
 
@@ -525,7 +547,7 @@ int Map::rec_pos(int x, int y, std::vector<std::vector<int>>& arg, int& prev_dir
 
     int point_value = arg[y][x];
 
-    if (point_value == 0)
+    if (point_value == 0 || point_value == 100 || point_value == 101)
     {
         return 0;
     }
@@ -662,16 +684,31 @@ void Map::log_ascii_map()
         }
     };
 
-    static const char* type_names[] = { "maze", "garden", "cage" };
+    // Per-map file: logs/generation/maps/map_XX.log
+    namespace fs = std::filesystem;
+    fs::path dir = fs::path("../logs/generation/maps");
+    fs::create_directories(dir);
 
-    Logger::info(Logger::MAP, "--- map #" + std::to_string(map_id)
-        + " (" + std::string(map_id < 3 ? type_names[0] : "?") + ")"
-        + "  legend: # wall  - | path  N/E/S/W door  * item  O hole ---");
+    std::ostringstream id_str;
+    id_str << std::setw(2) << std::setfill('0') << map_id;
+    std::ofstream f(dir / ("map_" + id_str.str() + ".log"));
 
-    // Top border row
+    // Collect door info
+    static const char* side_names[4] = {"N", "E", "S", "W"};
+    std::string door_list;
+    for (int s = 0; s < 4; s++)
+        if (door_array[s].get_active())
+            door_list += std::string(side_names[s])
+                + "[" + std::to_string(door_array[s].get_x())
+                + ";" + std::to_string(door_array[s].get_y()) + "] ";
+
+    f << "map #" << map_id
+      << "  doors=" << __builtin_popcount(connection_mask)
+      << "  " << door_list << "\n"
+      << "legend: # wall  - | path  N/E/S/W door  * item  O hole\n\n";
+
     std::string border(width + 2, '#');
-    Logger::info(Logger::MAP, border);
-
+    f << border << "\n";
     for (int h = 0; h < height; h++)
     {
         std::string row = "#";
@@ -679,12 +716,14 @@ void Map::log_ascii_map()
         {
             int tile = data[h][w].first;
             int item = data[h][w].second;
-            // Items override the floor tile so they're visible
             row += (item == 1) ? '*' : tile_char(tile);
         }
-        row += "#";
-        Logger::info(Logger::MAP, row);
+        f << row << "#\n";
     }
+    f << border << "\n";
 
-    Logger::info(Logger::MAP, border);
+    // Summary line in the shared map.log
+    Logger::info(Logger::MAP, "map #" + std::to_string(map_id)
+        + " written to maps/map_" + id_str.str() + ".log"
+        + "  doors=" + door_list);
 }
