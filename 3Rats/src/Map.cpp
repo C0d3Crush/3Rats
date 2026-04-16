@@ -395,6 +395,7 @@ void Map::generate_maze(bool item_generation, bool entity_generation)
         + " (maze) tries=" + std::to_string(map_generation_try)
         + " doors=" + std::to_string(__builtin_popcount(connection_mask)));
     save_data(map_data, item_data);
+    log_ascii_map();
 }
 
 void Map::generate_garden(bool item_generation, bool entity_generation)
@@ -421,6 +422,7 @@ void Map::generate_garden(bool item_generation, bool entity_generation)
     Logger::info(Logger::MAP, "map #" + std::to_string(map_id)
         + " (garden) doors=" + std::to_string(__builtin_popcount(connection_mask)));
     save_data(map_data, item_data);
+    log_ascii_map();
 }
 
 void Map::generate_cage(bool item_generation, bool entity_generation)
@@ -463,6 +465,7 @@ void Map::generate_cage(bool item_generation, bool entity_generation)
     Logger::info(Logger::MAP, "map #" + std::to_string(map_id)
         + " (cage) doors=" + std::to_string(__builtin_popcount(connection_mask)));
     save_data(map_data, item_data);
+    log_ascii_map();
 }
 
 void Map::generate_door(int side, int type_generation)
@@ -659,3 +662,57 @@ void Map::save_data(const std::vector<std::vector<int>>& map_data, const std::ve
 }
 
 int Map::get_tile(int x, int y) { return y * width + x; }
+
+void Map::log_ascii_map()
+{
+    // Map tile types to readable single characters
+    auto tile_char = [](int type) -> char {
+        switch (type) {
+        case  0: return 'X';   // legacy exit door
+        case  1: return '#';   // wall
+        case  2: return 'Y';   // legacy entry door
+        case  3: return '-';   // horizontal walkway (right)
+        case  4: return '-';   // horizontal walkway (left)
+        case  5: return '|';   // vertical walkway (up)
+        case  6: return '|';   // vertical walkway (down)
+        case  7: case 8: case 9: case 10: return '+';  // corners / junctions
+        case 11: return '#';   // hard wall
+        case 12: return ' ';   // garden open floor
+        case 13: return 'O';   // hole
+        case 14: return '_';   // cage wooden floor
+        case 15: return 'F';   // food bowl
+        case 16: return 'B';   // bed
+        case 20: return 'N';   // north door
+        case 21: return 'E';   // east door
+        case 22: return 'S';   // south door
+        case 23: return 'W';   // west door
+        default: return '?';
+        }
+    };
+
+    static const char* type_names[] = { "maze", "garden", "cage" };
+
+    Logger::info(Logger::MAP, "--- map #" + std::to_string(map_id)
+        + " (" + std::string(map_id < 3 ? type_names[0] : "?") + ")"
+        + "  legend: # wall  - | path  N/E/S/W door  * item  O hole ---");
+
+    // Top border row
+    std::string border(width + 2, '#');
+    Logger::info(Logger::MAP, border);
+
+    for (int h = 0; h < height; h++)
+    {
+        std::string row = "#";
+        for (int w = 0; w < width; w++)
+        {
+            int tile = data[h][w].first;
+            int item = data[h][w].second;
+            // Items override the floor tile so they're visible
+            row += (item == 1) ? '*' : tile_char(tile);
+        }
+        row += "#";
+        Logger::info(Logger::MAP, row);
+    }
+
+    Logger::info(Logger::MAP, border);
+}

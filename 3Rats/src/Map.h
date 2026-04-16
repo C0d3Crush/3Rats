@@ -54,7 +54,6 @@ private:
 	// helper functions for generation
 	void generate_door(int side, int type_generation);
 	void generate_doors(int mask, int type_generation);
-	void carve_path(std::vector<std::vector<int>>& data, int x1, int y1, int x2, int y2);
 
 	//functions for generation
 	int rec_pos(int x, int y, std::vector<std::vector <int>>& arg, int& prev_direction);
@@ -65,6 +64,7 @@ private:
 	void trim_boarder(std::vector<std::vector <int>>& data, std::vector<std::vector <int>>& map_data);
 	//void set_corners(std::vector<std::vector <int>>& map_data);
 	void save_data(const std::vector<std::vector <int>>& map_data, const std::vector<std::vector <int>>& item_data);
+	void log_ascii_map();
 	
 	void set_entity_to_map(std::vector<std::vector <int>>& map_data, std::vector<std::vector <int>>& entity_data, int height, int width, int propability);
 	void set_items_to_map(std::vector<std::vector <int>>& map_data, std::vector<std::vector <int>>& item_data, int height, int width, int propability);
