@@ -13,14 +13,11 @@ Text::~Text()
 
 void Text::update(std::string time)
 {
-	// as TTF_RenderText_Solid could only be used on
-	// SDL_Surface then you have to create the surface first
+	SDL_FreeSurface(surfaceMessage);
+	SDL_DestroyTexture(Message);
+
 	surfaceMessage = TTF_RenderText_Solid(font, time.c_str(), colour);
-
-
-	// now you can convert it into a texture
 	Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-
 }
 
 void Text::draw(SDL_Renderer* renderTarget)

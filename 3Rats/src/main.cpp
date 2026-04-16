@@ -17,6 +17,7 @@
 #include "Overlay.h"
 #include "Pause.h"
 #include "Console.h"
+#include "Metrics.h"
 
 int world_seed_generation(bool value)
 {
@@ -401,6 +402,9 @@ int main(int argc, char* argv[])
 	Acteur entity[entity_amount];
 	init_entity(renderTarget, entity, entity_amount, topography, random);
 
+	Metrics metrics;
+	metrics.init(renderTarget, player_array, &topography);
+
 	Console console;
 	console.init(renderTarget,
 	             player_array, player_amount,
@@ -489,6 +493,9 @@ int main(int argc, char* argv[])
 					break;
 				case SDLK_0:
 					break;
+				case SDLK_TAB:
+					metrics.toggle();
+					break;
 				}
 			}
 		}
@@ -498,6 +505,7 @@ int main(int argc, char* argv[])
 		// =================================== UPDATE GAME ===================================
 		// ===================================================================================
 
+		metrics.update();
 		//topography.update(delta);
 
 		player_array[0].Update(delta, keyState, mode, player_array[2]);
@@ -533,6 +541,7 @@ int main(int argc, char* argv[])
 		fade.draw(renderTarget);
 		pause.draw(renderTarget);
 		overlay.draw(renderTarget);
+		metrics.draw();
 		console.draw();
 
 		SDL_RenderPresent(renderTarget);

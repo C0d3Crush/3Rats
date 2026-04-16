@@ -52,10 +52,10 @@ void Body::set_texture(const std::string& filePath)
         std::cerr << "Failed to load image: " << IMG_GetError() << std::endl;
 		//return false;
     }
+	if (texture) SDL_DestroyTexture(texture);
 	texture = SDL_CreateTextureFromSurface(ptr_renderer, surface);
-	
-	SDL_FreeSurface(surface);
 
+	SDL_FreeSurface(surface);
 
 	if (texture == nullptr) {
         std::cerr << "Failed to create texture: " << SDL_GetError() << std::endl;
