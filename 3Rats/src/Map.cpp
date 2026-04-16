@@ -509,51 +509,27 @@ void Map::generate_doors(int mask, int type_generation)
     }
 }
 
-int Map::rec_pos(int x, int y, std::vector<std::vector <int>>& arg, int& prev_direction)
+int Map::rec_pos(int x, int y, std::vector<std::vector<int>>& arg, int& prev_direction)
 {
     rec_iter++;
     int direction = ERROR_DIRECTION;
 
-    //================= set new location
-    // make this one structure a new function maybe???
-
     switch (random_ptr->roll_custom_dice(4))
     {
-    case 1:
-        direction = RIGHT;
-        x++;
-        break;
-
-    case 2:
-        direction = LEFT;
-        x--;
-        break;
-
-    case 3:
-        direction = UP;
-        y++;
-        break;
-
-    case 4:
-        direction = DOWN;
-        y--;
-        break;
-
-    default:
-        direction = ERROR_DIRECTION;
-        Logger::error(Logger::MAP, "rec_pos: invalid direction roll");
-        break;
+    case 1: direction = RIGHT; x++; break;
+    case 2: direction = LEFT;  x--; break;
+    case 3: direction = UP;    y++; break;
+    case 4: direction = DOWN;  y--; break;
+    default: Logger::error(Logger::MAP, "rec_pos: invalid direction roll"); break;
     }
-
-    //================= try new location
 
     int point_value = arg[y][x];
 
-    if (point_value == 0 || (point_value >= 3 && point_value <= 6))  // door or existing tunnel
+    if (point_value == 0)
     {
         return 0;
     }
-    else if (point_value == 1)                    // empty field == wall
+    else if (point_value == 1)
     {
         arg[y][x] = direction;
 
@@ -562,15 +538,11 @@ int Map::rec_pos(int x, int y, std::vector<std::vector <int>>& arg, int& prev_di
         if (vall == 0)
         {
             directions.push_back(direction);
-            return vall;
-        }
-        else if (vall == 1)
-        {
-
-            arg[y][x] = direction;
+            return 0;
         }
         else
         {
+            // Dead end or border — un-carve and let the while loop retry
             arg[y][x] = 1;
             return vall;
         }
