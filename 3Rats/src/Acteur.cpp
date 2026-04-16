@@ -275,7 +275,9 @@ Acteur::Acteur()
 	dead = false;
 	item_type = 0;
 
-	saturation = 100;
+	saturation      = 100;
+	hungerTimer     = 0.0f;
+	nextHungerTick  = 3.0f;
 
 	file_path = "../meta_textures/place_holder.png";
 	item_search_id = 0;
@@ -333,6 +335,15 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 	item_array = topography->get_item_array();
 	item_array_size = topography->get_item_size();
 
+	// hunger decay
+	hungerTimer += delta;
+	if (hungerTimer >= nextHungerTick)
+	{
+		hungerTimer = 0.0f;
+		nextHungerTick = 3.0f + random_ptr->roll_custom_dice(30) / 10.0f; // 3.1 – 6.0 s
+		if (saturation > 0) saturation--;
+	}
+
 	if (is_item_available_on_map())
 	{
 		make_goal();	// make it so: goal = make_goal();
@@ -376,6 +387,10 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 
 	get_direction_blocked(collision_counter, direction, tile_array_size);
 
+	// slow rat when starving
+	float saved_speed = moveSpeed;
+	if (saturation == 0) moveSpeed *= 0.5f;
+
 	// make acteurs move
 
 	controller_move move = {
@@ -412,6 +427,8 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 			}
 		}
 	}
+
+	moveSpeed = saved_speed;
 
 	// make item visible on a acteur
 	if (holds_item)

@@ -18,11 +18,12 @@ Metrics::~Metrics()
     if (font) TTF_CloseFont(font);
 }
 
-void Metrics::init(SDL_Renderer* rend, Acteur* players, Topography* topo)
+void Metrics::init(SDL_Renderer* rend, Acteur* players, int p_amount, Topography* topo)
 {
-    renderer     = rend;
-    player_array = players;
-    topography   = topo;
+    renderer      = rend;
+    player_array  = players;
+    player_amount = p_amount;
+    topography    = topo;
     last_tick    = SDL_GetTicks();
 
     font = TTF_OpenFont("../fonts/sans.ttf", 12);
@@ -89,14 +90,17 @@ void Metrics::draw()
 
     // build lines
     struct Line { std::string label; std::string value; };
-    Line lines[] = {
-        { "FPS",    std::to_string((int)fps) },
-        { "MEM",    std::to_string(mem) + " MB" },
-        { "MAP",    std::to_string(map_id) },
-        { "TILE",   std::to_string(tx) + ", " + std::to_string(ty) },
-        { "PX",     std::to_string(px) + ", " + std::to_string(py) },
+    std::vector<Line> lines = {
+        { "FPS",  std::to_string((int)fps) },
+        { "MEM",  std::to_string(mem) + " MB" },
+        { "MAP",  std::to_string(map_id) },
+        { "TILE", std::to_string(tx) + ", " + std::to_string(ty) },
+        { "PX",   std::to_string(px) + ", " + std::to_string(py) },
     };
-    int n = sizeof(lines) / sizeof(lines[0]);
+    for (int i = 0; i < player_amount; i++)
+        lines.push_back({ "RAT" + std::to_string(i), std::to_string(player_array[i].get_saturation()) + " / 100" });
+
+    int n = (int)lines.size();
     int panel_h = PADDING * 2 + n * LINE_H;
 
     draw_rect_alpha(0, 0, W, panel_h, 0, 0, 0, 180);

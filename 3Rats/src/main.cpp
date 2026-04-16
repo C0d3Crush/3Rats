@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
 	init_entity(renderTarget, entity, entity_amount, topography, random);
 
 	Metrics metrics;
-	metrics.init(renderTarget, player_array, &topography);
+	metrics.init(renderTarget, player_array, player_amount, &topography);
 
 	Console console;
 	console.init(renderTarget,

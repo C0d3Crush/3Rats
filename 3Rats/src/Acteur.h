@@ -38,8 +38,9 @@ protected:
 
 	bool dead;
 
-	int saturation;		// 0 - 100
-	// ticksystem removing hunger
+	int   saturation;		// 0 - 100
+	float hungerTimer;
+	float nextHungerTick;	// randomised interval between decays
 
 // for update fuction
 	std::vector<std::vector<bool>> get_blocked_array(Tile* tile_array, int length);
@@ -69,4 +70,5 @@ public:
 
 	void set_move_speed(float speed) { moveSpeed = speed; }
 	void debug_give_item(Item* items, int count);
+	int  get_saturation() const { return saturation; }
 };

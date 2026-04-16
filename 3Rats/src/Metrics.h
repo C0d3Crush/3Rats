@@ -16,6 +16,7 @@ private:
     SDL_Renderer* renderer;
 
     Acteur*     player_array;
+    int         player_amount;
     Topography* topography;
 
     Uint32 last_tick;
@@ -30,7 +31,7 @@ public:
     Metrics();
     ~Metrics();
 
-    void init(SDL_Renderer* rend, Acteur* players, Topography* topo);
+    void init(SDL_Renderer* rend, Acteur* players, int p_amount, Topography* topo);
     void update();
     void draw();
     void toggle() { is_open = !is_open; }
