@@ -28,10 +28,9 @@ private:
 
 	int map_generation_try;
 
-	Door door_array[3];
+	Door door_array[4];  // indexed by side: 0=N, 1=E, 2=S, 3=W
 
-	int entry_direction;
-	int exit_direction;
+	int connection_mask; // bitmask of connected sides: bit0=N, bit1=E, bit2=S, bit3=W
 
 	int item_id;
 	int* item_on_map;
@@ -53,8 +52,9 @@ private:
 	void generate_cage(bool item_generation, bool entity_generation);
 
 	// helper functions for generation
-	void generate_door(int direction, int index, int type, bool active);
-	void generate_doors(int entry_direction, int exit_direction, int type_generation);
+	void generate_door(int side, int type_generation);
+	void generate_doors(int mask, int type_generation);
+	void carve_path(std::vector<std::vector<int>>& data, int x1, int y1, int x2, int y2);
 
 	//functions for generation
 	int rec_pos(int x, int y, std::vector<std::vector <int>>& arg, int& prev_direction);
@@ -84,7 +84,7 @@ public:
 	void set_textures();
 	void set_ptr(int* ptr);
 	void set_map_id(int numer);
-	void set_layout(std::string layout);
+	void set_layout(int mask);
 
 
 	int get_map_id();

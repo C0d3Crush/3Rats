@@ -18,5 +18,6 @@ public:
 	bool is_exit;
 	bool is_entrance;
 	bool is_hole;
+	int  door_side;  // -1=not a door; 0=N, 1=E, 2=S, 3=W
 
 };

@@ -61,63 +61,38 @@ std::vector<std::vector<bool>> Acteur::get_blocked_array(Tile* tile_array, int l
 
 void Acteur::check_door(Topography* topography, Map* map_array, int map_amount, Tile* tile_array, int length)
 {
-	// make it that all acteurs spawn at the new door
-	// not at 0, 0 
-	// new door could be anywhere
+	if (!wants_enter_door) return;
+	if (controller_number != 0) return;
+
+	static const int opposite[4] = {2, 3, 0, 1};  // N<->S, E<->W
 
 	int current_map_id = topography->get_current_map_id();
 
 	for (int i = 0; i < length; i++)
 	{
-		bool last_room = (current_map_id == map_amount - 1);
-		bool first_room = (current_map_id == 0);
+		if (!tile_array[i].is_exit)      continue;
+		if (tile_array[i].door_side < 0) continue;
+		if (!intersectsWithBody(tile_array[i])) continue;
 
-		if (!wants_enter_door) break;
-		if (!(controller_number == 0)) break;
+		int side        = tile_array[i].door_side;
+		int neighbor_id = topography->get_neighbor(current_map_id, side);
+		if (neighbor_id < 0 || neighbor_id >= map_amount) continue;
 
-		if (intersectsWithBody(tile_array[i]) && controller_number == 0)
+		wants_enter_door = false;
+
+		topography->set_current_map_id(neighbor_id);
+		map_array[neighbor_id].set_textures();
+
+		int arrival = opposite[side];
+		topography->set_arrival_side(arrival);
+
+		Door entry = map_array[neighbor_id].get_door(arrival);
+		if (entry.get_active())
 		{
-			wants_enter_door = false;
-			if (tile_array[i].is_exit && !last_room)
-			{
-				current_map_id++;
-				topography->set_current_map_id(current_map_id);
-				map_array[current_map_id].set_textures();
-				Door entry = map_array[current_map_id].get_door(0);
-
-				position_rect.x = entry.get_x() * 64 - crop_rect.w;
-				position_rect.y = entry.get_y() * 64 - crop_rect.h;
-
-				//std::cout << "acteur 1: " << this->controller_number << std::endl;
-				//std::cout << "acteur 2: " << (this->controller_number)++ << std::endl;
-				//std::cout << "acteur 3: " << ((this->crop_rect.w)++)++ << std::endl;
-
-			}
-			else if (tile_array[i].is_entrance && !first_room)
-			{
-				current_map_id--;
-				topography->set_current_map_id(current_map_id);
-				map_array[current_map_id].set_textures();
-				Door exit = map_array[current_map_id].get_door(1);
-
-				position_rect.x = exit.get_x() * 64 - crop_rect.w;
-				position_rect.y = exit.get_y() * 64 - crop_rect.h;
-			}
-			else if (tile_array[i].is_hole && current_map_id != map_amount - 1)
-			{
-				current_map_id++;
-				topography->set_current_map_id(current_map_id);
-				map_array[current_map_id].set_textures();
-				Door entry = map_array[current_map_id].get_door(0);
-
-				position_rect.x = entry.get_x() * 64 - crop_rect.w;
-				position_rect.y = entry.get_y() * 64 - crop_rect.h;
-
-				// for testing this is set to be linear map. which is wrong.
-				// it has to be 3d so a hole would move the map in z direction 
-				// also x and y should also have a directional influance on the map
-			}
+			position_rect.x = entry.get_x() * 64 - crop_rect.w;
+			position_rect.y = entry.get_y() * 64 - crop_rect.h;
 		}
+		break;
 	}
 }
 
@@ -263,11 +238,31 @@ void Acteur::hold_item_in_mouth(Item& item)
 void Acteur::teleport_to_entrence()
 {
 	Map* map_ptr = topography->get_map_array();
+	int  map_id  = topography->get_current_map_id();
 
-	set_cords(
-		map_ptr[topography->get_current_map_id()].get_door(0).get_x() * 64 - crop_rect.w,
-		map_ptr[topography->get_current_map_id()].get_door(0).get_y() * 64 - crop_rect.h
-	);
+	for (int side = 0; side < 4; side++)
+	{
+		Door d = map_ptr[map_id].get_door(side);
+		if (d.get_active())
+		{
+			set_cords(d.get_x() * 64 - crop_rect.w,
+			          d.get_y() * 64 - crop_rect.h);
+			return;
+		}
+	}
+}
+
+void Acteur::teleport_to_door(int side)
+{
+	Map* map_ptr = topography->get_map_array();
+	int  map_id  = topography->get_current_map_id();
+	Door d       = map_ptr[map_id].get_door(side);
+
+	if (d.get_active())
+		set_cords(d.get_x() * 64 - crop_rect.w,
+		          d.get_y() * 64 - crop_rect.h);
+	else
+		teleport_to_entrence();
 }
 
 Acteur::Acteur()
@@ -340,7 +335,7 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 	int current_map_id = topography->get_current_map_id();
 	if (controller_number != 0 && current_map_id != last_map_id)
 	{
-		teleport_to_entrence();
+		teleport_to_door(topography->get_arrival_side());
 	}
 	last_map_id = current_map_id;
 

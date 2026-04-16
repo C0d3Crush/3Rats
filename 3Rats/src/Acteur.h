@@ -63,7 +63,8 @@ public:
 
 	void set_cords_frames(int x, int y, int framesX, int framesY);
 
-	void teleport_to_entrence();	// change to set_pos(entrence);
+	void teleport_to_entrence();
+	void teleport_to_door(int side);
 	bool intersectsWithBody(Body& b);		//get intersect
 
 	//not

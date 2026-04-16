@@ -6,66 +6,46 @@
 class Topography : public Level_Structure
 {
 private:
-	SDL_Renderer* renderTarget;
+    SDL_Renderer* renderTarget;
 
-	int current_map_id;
+    int current_map_id;
+    int arrival_side;   // side we arrived on in the current room (0=N,1=E,2=S,3=W)
 
-	const std::string EMPTY = ".";
-	const std::string WALL = "#";
-	const std::string FINISH = "F";
-	const std::string START = "S";
+    int height, width;  // topology grid dimensions
 
-	const std::string NORTH = "N";
-	const std::string EAST = "E";
-	const std::string SOUTH = "S";
-	const std::string WEST = "W";	
-	
-	int height, width;
+    int  room_connections[5][5];  // bitmask per cell: bit0=N, bit1=E, bit2=S, bit3=W
+    bool visited[5][5];
 
-	std::vector<std::pair<std::pair<int, int >, std::pair<int, int >>> connections;
+    Map* map_array;
+    int  map_array_size;
 
-	double time;
+    int  number_items_on_map;
+    int* ptr;
 
-	Map* map_array;
-	int map_array_size;
-
-	int number_items_on_map;
-	int* ptr;
-
-	std::vector<std::vector <std::pair<std::string, int>>> data;//(height + 2, std::vector<int>(width + 2));
-	std::vector<std::vector <std::pair<std::string, int>>> map_data;//(std::pair<int, int>(height), std::vector<int>(width));
+    void carve_passages(int x, int y);
 
 public:
-	Topography();
+    Topography();
 
-	void set_map_array(Map* map, int size);
-	Map* get_map_array();
-	int get_map_size();
+    void set_map_array(Map* map, int size);
+    Map* get_map_array();
+    int  get_map_size();
 
-	int get_current_map_id();
-	void set_current_map_id(int number);
+    int  get_current_map_id();
+    void set_current_map_id(int number);
 
-	void set_up();
+    int  get_arrival_side();
+    void set_arrival_side(int side);
 
-	void make_maze();
-	void make_points(int a_x, int a_y, int b_x, int b_y);
-	void build_frame(std::vector<std::vector <std::pair<std::string, int>>>& map_data, std::pair<int, int >entrance, std::pair<int, int >exit);
-	std::string find_empty_space(int x, int y, std::vector<std::vector <std::pair<std::string, int>>>& arg, std::string& prev_direction, int iterator);
-	void trim_boarder(std::vector<std::vector <std::pair<std::string, int>>>& data, std::vector<std::vector <std::pair<std::string, int>>>& map_data);
-	void print_vector(std::vector<std::vector <std::pair<std::string, int>>>& arg, int size_x, int size_y);
-	void print_vector_hidden(std::vector<std::vector <std::pair<std::string, int>>>& arg, int size_x, int size_y);
+    void set_up();
+    void generate_connections();
 
-	void print_connections(std::vector<std::pair<std::pair<int, int >, std::pair<int, int >>>connections);
+    int  get_layout(int room_id);           // returns connection bitmask for room
+    int  get_neighbor(int room_id, int direction);  // returns neighbor room id, or -1
 
-	std::string get_layout(int num);
+    void update(float delta);
+    void draw(SDL_Renderer* renderTarget);
+    void set_renderer(SDL_Renderer* renderTarget);
 
-	void update(float delta);
-	void draw(SDL_Renderer* renderTarget);
-
-	void set_renderer(SDL_Renderer* renderTarget);
-
-	Map* get_map();
-
-	int counter_maps;
-
+    Map* get_map();
 };

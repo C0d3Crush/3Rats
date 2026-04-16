@@ -7,6 +7,7 @@ Tile::Tile()
 	is_entrance = false;
 	is_exit = false;
 	is_hole = false;
+	door_side = -1;
 
 	file_path = "../meta_textures/place_holder.png";
 }
@@ -17,6 +18,7 @@ Tile::Tile(const Tile& other)
 	is_exit = other.is_exit;
 	is_entrance = other.is_entrance;
 	is_hole = other.is_hole;
+	door_side = other.door_side;
 	this->hight = other.hight;
 
 	this->file_path = other.file_path;

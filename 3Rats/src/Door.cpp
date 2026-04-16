@@ -6,6 +6,7 @@ Door::Door(int x_pos, int y_pos, int t, bool active)
 	y = y_pos;
 	type = t;
 	is_active = active;
+	side = -1;
 }
 
 Door::Door()
@@ -14,6 +15,7 @@ Door::Door()
 	y = 0;
 	type = 0;
 	is_active = false;
+	side = -1;
 }
 
 int Door::get_x()
@@ -36,13 +38,16 @@ bool Door::get_active()
 	return is_active;
 }
 
-void Door::init_door(int x_pos, int y_pos, int t, bool active)
+void Door::init_door(int x_pos, int y_pos, int t, bool active, int s)
 {
 	x = x_pos;
 	y = y_pos;
 	type = t;
 	is_active = active;
+	side = s;
 }
+
+int Door::get_side() { return side; }
 
 void Door::set_cords(int x_pos, int y_pos)
 {

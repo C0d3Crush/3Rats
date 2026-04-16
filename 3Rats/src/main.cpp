@@ -173,33 +173,26 @@ void init_map_array(SDL_Renderer* renderTarget, Tile* tile_array, int tile_amoun
 	}
 }
 
-void init_topography(SDL_Renderer* renderTarget, Map* map_ptr, int map_amount, Topography* topography, Random& random )
+void init_topography(SDL_Renderer* renderTarget, Map* map_ptr, int map_amount, Topography* topography, Random& random)
 {
 	topography->set_renderer(renderTarget);
 
-	Item* item_ptr = map_ptr[0].get_item_array();
-	int item_amount = map_ptr[0].get_item_size();
+	Item* item_ptr  = map_ptr[0].get_item_array();
+	int   item_amount = map_ptr[0].get_item_size();
 
-	Tile* tile_ptr = map_ptr[0].get_tile_array();
-	int tile_amount = map_ptr[0].get_tile_size();
+	Tile* tile_ptr  = map_ptr[0].get_tile_array();
+	int   tile_amount = map_ptr[0].get_tile_size();
 
 	topography->set_map_array(map_ptr, map_amount);
 	topography->set_item_array(item_ptr, item_amount);
-	topography->set_tile_array(tile_ptr, item_amount);
+	topography->set_tile_array(tile_ptr, tile_amount);
 	topography->set_random_pointer(random);
 
 	topography->set_up();
-	topography->make_maze();
+	topography->generate_connections();
 
-	map_ptr[0].set_type(2);
-
-	for (int i = 1; i < map_amount; i++)
+	for (int i = 0; i < map_amount; i++)
 	{
-		if (topography->counter_maps == i)
-		{
-			std::cout << "END GENERATED!" << std::endl;
-			break;
-		}
 		map_ptr[i].set_layout(topography->get_layout(i));
 		map_ptr[i].set_type(random.flip_coin());
 	}
@@ -296,7 +289,7 @@ int main(int argc, char* argv[])
 	const int screen_hight = 420;
 
 	const int tile_amount = 54;
-	const int map_amount = 10;
+	const int map_amount = 25;  // 5x5 topology grid
 	const int item_amount = 54;
 	const int player_amount = 3;
 	const int entity_amount = 1;
