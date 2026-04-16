@@ -31,6 +31,8 @@ protected:
 	float waitCounter;
 	bool wait;
 
+	int last_map_id;
+
 
 
 	float moveSpeed;

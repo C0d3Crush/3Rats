@@ -296,6 +296,7 @@ Acteur::Acteur()
 	moveSpeed = 200.0f;
 
 	wait = false;
+	last_map_id = 0;
 
 	searchCounter = rand() % 100;
 	searchCounter /= 100.0f;
@@ -334,6 +335,14 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 
 	item_array = topography->get_item_array();
 	item_array_size = topography->get_item_size();
+
+	// teleport follower rats when the player switches rooms
+	int current_map_id = topography->get_current_map_id();
+	if (controller_number != 0 && current_map_id != last_map_id)
+	{
+		teleport_to_entrence();
+	}
+	last_map_id = current_map_id;
 
 	// hunger decay
 	hungerTimer += delta;
