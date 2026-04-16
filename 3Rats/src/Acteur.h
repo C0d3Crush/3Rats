@@ -67,5 +67,6 @@ public:
 	~Acteur();
 	void use_item();		// set_item_use
 
-	
+	void set_move_speed(float speed) { moveSpeed = speed; }
+	void debug_give_item(Item* items, int count);
 };

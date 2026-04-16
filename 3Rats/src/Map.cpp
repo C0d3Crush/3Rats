@@ -270,7 +270,11 @@ void Map::set_textures()
             int x_cord = w * 64;
             int y_cord = h * 64;
 
-            if (data[h][w].second == 1)
+            if (inspected_item.get_pick_up())
+            {
+                // item is carried by a rat — leave texture and position alone
+            }
+            else if (data[h][w].second == 1)
             {
                 inspected_item.set_on_map(true);
                 inspected_item.set_cords(x_cord, y_cord);

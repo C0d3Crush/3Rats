@@ -16,6 +16,7 @@
 #include "Fade.h"
 #include "Overlay.h"
 #include "Pause.h"
+#include "Console.h"
 
 int world_seed_generation(bool value)
 {
@@ -331,7 +332,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialize SDL_image
-    int imgFlags = IMG_INIT_JPG; // or IMG_INIT_JPG, depending on the image format you want to support
+    int imgFlags = IMG_INIT_PNG;
     if (!(IMG_Init(imgFlags) & imgFlags)) {
         std::cout << "SDL_image initialization failed: " << IMG_GetError() << std::endl;
         SDL_DestroyRenderer(renderTarget);
@@ -400,6 +401,14 @@ int main(int argc, char* argv[])
 	Acteur entity[entity_amount];
 	init_entity(renderTarget, entity, entity_amount, topography, random);
 
+	Console console;
+	console.init(renderTarget,
+	             player_array, player_amount,
+	             map_array,    map_amount,
+	             &topography,
+	             item_array,   item_amount,
+	             tile_array,   tile_amount);
+
 	// ===================================================================================
 
 
@@ -417,10 +426,12 @@ int main(int argc, char* argv[])
 
 		while (SDL_PollEvent(&ev) != 0)		// ------------- key-events
 		{
+			console.handle_event(ev);
+
 			// Getting the quit and keyboard events
 			if (ev.type == SDL_QUIT)
 				isRunning = false;
-			else if (ev.type == SDL_KEYDOWN) {
+			else if (ev.type == SDL_KEYDOWN && !console.get_open()) {
 				switch (ev.key.keysym.sym)
 				{
 				case SDLK_SPACE:
@@ -522,6 +533,7 @@ int main(int argc, char* argv[])
 		fade.draw(renderTarget);
 		pause.draw(renderTarget);
 		overlay.draw(renderTarget);
+		console.draw();
 
 		SDL_RenderPresent(renderTarget);
 	}

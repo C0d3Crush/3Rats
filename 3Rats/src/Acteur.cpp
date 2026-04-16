@@ -468,6 +468,23 @@ bool Acteur::intersectsWithBody(Body& b)
 }
 
 
+void Acteur::debug_give_item(Item* items, int count)
+{
+    if (holds_item) return;
+    for (int i = 0; i < count; i++)
+    {
+        if (!items[i].get_pick_up())
+        {
+            items[i].set_pick_up(true);
+            items[i].set_on_map(true);
+            item_hold_id = i;
+            holds_item   = true;
+            item_type    = 1;
+            return;
+        }
+    }
+}
+
 void Acteur::use_item()
 {
 	if (item_type == 0)

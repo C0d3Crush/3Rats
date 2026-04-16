@@ -4,7 +4,10 @@
 
 
 
-Body::Body() : texture(nullptr) { }
+Body::Body() : texture(nullptr), ptr_renderer(nullptr),
+    crop_rect{0, 0, 0, 0}, position_rect{0, 0, 0, 0},
+    frame_width(0), frame_height(0), texture_width(0),
+    origin_x(0), origin_y(0), radius(0), hight(0) { }
 
 Body::~Body() { if (texture) SDL_DestroyTexture(texture); }
 
