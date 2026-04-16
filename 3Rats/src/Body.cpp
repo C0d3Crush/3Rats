@@ -38,7 +38,7 @@ void Body::set_texture(const std::string& filePath)
 	if (testing_textures == true)
 	{
 		std::cout << " " << std::endl;
-		std::cout << "Current working directory: " << std::__fs::filesystem::current_path() << std::endl;
+		std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
 		std::cout << "Current filepath: " << file_path << std::endl;
 		std::cout << "coordinates of body -> x:" <<get_origin_x()<<" y: "<< get_origin_y()<<std::endl;
 	}

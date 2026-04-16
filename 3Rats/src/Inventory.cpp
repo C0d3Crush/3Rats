@@ -2,22 +2,17 @@
 
 Inventory::Inventory()
 {
-	inventory_slots[3];
+	inventory_slots.resize(3);
 }
 
 Inventory::Inventory(int player_amount)
 {
-
-	inventory_slots[player_amount];
-
+	inventory_slots.resize(player_amount);
 }
 
 void Inventory::init_inventory(int player_amount)
 {
-	for (int i = 0; i < player_amount; i++)
-	{
-		inventory_slots[i] = 0;
-	}
+	inventory_slots.assign(player_amount, 0);
 }
 
 void Inventory::set_item_at(int index, int item)

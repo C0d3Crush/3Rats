@@ -1,15 +1,13 @@
 #pragma once
 
 #include "Item.h"
-
-// normaly i should use some kind of array of items 
-// but for testing lets do it with int
+#include <vector>
 
 class Inventory
 {
 private:
 	//Item inventory_slots[];
-	int inventory_slots[];
+	std::vector<int> inventory_slots;
 public:
 	Inventory();
 	Inventory(int player_amount);
