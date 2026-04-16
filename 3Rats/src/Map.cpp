@@ -353,34 +353,51 @@ void Map::generate_maze(bool item_generation, bool entity_generation)
     std::vector<std::vector<int>> map_data(height, std::vector<int>(width));
     std::vector<std::vector<int>> item_data(height, std::vector<int>(width));
 
-    // Fill everything with walls
-    build_frame(data, 1, 1);
+    build_frame(data, 9, 1);
 
-    // Place directional door tiles
-    place_doors(data, door_array);
+    // All active doors start as value 0 (success target for rec_pos)
+    for (int side = 0; side < 4; side++)
+        if (door_array[side].get_active())
+            data[door_array[side].get_y()][door_array[side].get_x()] = 0;
 
-    // Room center in data-space (1-indexed interior)
-    int cx = (width + 1) / 2;   // width=9  → cx=5
-    int cy = (height + 1) / 2;  // height=6 → cy=3
+    // A 1-door (leaf) room has no second target for rec_pos to reach.
+    // Place a phantom exit at the room centre so the walk has somewhere to go.
+    // After the walk the centre becomes a regular carved tile.
+    int cx = (width  + 1) / 2;
+    int cy = (height + 1) / 2;
+    bool phantom = (__builtin_popcount(connection_mask) == 1);
+    if (phantom)
+        data[cy][cx] = 0;
 
-    // One step inward from each wall side
-    static const int sdx[4] = { 0, -1,  0, 1 };  // N, E, S, W
-    static const int sdy[4] = { 1,  0, -1, 0 };
-
+    // Walk from each door. Temporarily mark the starting door with 99 so the
+    // walk is forced to reach a *different* door or an already-carved tile.
     for (int side = 0; side < 4; side++)
     {
         if (!door_array[side].get_active()) continue;
 
-        int start_x = door_array[side].get_x() + sdx[side];
-        int start_y = door_array[side].get_y() + sdy[side];
+        int dx = door_array[side].get_x();
+        int dy = door_array[side].get_y();
 
-        carve_path(data, start_x, start_y, cx, cy);
+        data[dy][dx] = 99;
+
+        while (rec_pos(dx, dy, data, data[1][1]) != 0)
+            map_generation_try++;
+
+        data[dy][dx] = 0;  // restore so later walks can connect here
     }
+
+    // Convert phantom centre back to a regular floor tile
+    if (phantom && data[cy][cx] == 0)
+        data[cy][cx] = 3;
+
+    // Stamp proper directional door types (20-23) over the 0 markers
+    place_doors(data, door_array);
 
     trim_boarder(data, map_data);
     if (item_generation) set_items_to_map(map_data, item_data, height, width, 30);
 
-    std::cout << "Map #" << map_id << " (maze) doors=" << __builtin_popcount(connection_mask) << std::endl;
+    std::cout << "Map #" << map_id << " (maze) tries=" << map_generation_try
+              << " doors=" << __builtin_popcount(connection_mask) << std::endl;
     save_data(map_data, item_data);
 }
 
@@ -531,9 +548,9 @@ int Map::rec_pos(int x, int y, std::vector<std::vector <int>>& arg, int& prev_di
 
     int point_value = arg[y][x];
 
-    if (point_value == 0)                         // finish or path
+    if (point_value == 0 || (point_value >= 3 && point_value <= 6))  // door or existing tunnel
     {
-        return point_value;
+        return 0;
     }
     else if (point_value == 1)                    // empty field == wall
     {
@@ -588,26 +605,6 @@ void Map::place_doors(std::vector<std::vector<int>>& data, Door* door_array)
     }
 }
 
-void Map::carve_path(std::vector<std::vector<int>>& data, int x1, int y1, int x2, int y2)
-{
-    // Carve an L-shaped corridor from (x1,y1) to (x2,y2).
-    // Horizontal segment first, then vertical.
-    int x = x1, y = y1;
-    while (x != x2)
-    {
-        if (data[y][x] < 20)  // don't overwrite door tiles
-            data[y][x] = 3;   // horizontal walkway
-        x += (x2 > x) ? 1 : -1;
-    }
-    while (y != y2)
-    {
-        if (data[y][x] < 20)
-            data[y][x] = 5;   // vertical walkway
-        y += (y2 > y) ? 1 : -1;
-    }
-    if (data[y][x] < 20)
-        data[y][x] = 3;       // center junction
-}
 
 void Map::print_vector(const std::vector<std::vector<int>>& arg, const int& size_x, const int& size_y)
 {
