@@ -1,4 +1,5 @@
 #include "Acteur.h"
+#include "Logger.h"
 
 std::vector<std::vector<bool>> Acteur::get_blocked_array(Tile* tile_array, int length)
 {
@@ -79,6 +80,11 @@ void Acteur::check_door(Topography* topography, Map* map_array, int map_amount, 
 		if (neighbor_id < 0 || neighbor_id >= map_amount) continue;
 
 		wants_enter_door = false;
+
+		static const char* side_names[4] = {"N","E","S","W"};
+		Logger::info(Logger::ACTEUR, "rat 0 door transition: map "
+		    + std::to_string(current_map_id) + " -" + side_names[side] + "-> map "
+		    + std::to_string(neighbor_id));
 
 		topography->set_current_map_id(neighbor_id);
 		map_array[neighbor_id].set_textures();
@@ -195,7 +201,8 @@ void Acteur::follow_goal(int rat_x, int rat_y, int goal_x, int goal_y, block_dir
 	}
 	else if (rat_x == goal_x && rat_y == goal_y && !item.get_pick_up())
 	{
-		std::cout << "found!" << " p: " << controller_number << "item number: " << item_search_id << std::endl;;
+		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+		    + " picked up item " + std::to_string(item_search_id));
 
 		item_hold_id = item_search_id;
 		holds_item = true;
@@ -207,7 +214,8 @@ void Acteur::follow_goal(int rat_x, int rat_y, int goal_x, int goal_y, block_dir
 	}
 	else if (rat_x == goal_x && rat_y == goal_y && item.get_pick_up())
 	{
-		std::cout << "did not found!" << " p: " << controller_number << "item number: " << item_search_id << std::endl;;
+		Logger::warn(Logger::ITEMS, "rat " + std::to_string(controller_number)
+		    + " reached item " + std::to_string(item_search_id) + " but it was already taken");
 		has_goal = false;
 	}
 }
@@ -520,7 +528,8 @@ void Acteur::use_item()
 		item_array[item_hold_id].set_cords(-100, -100);
 		item_array[item_hold_id].set_on_map(false);
 
-		std::cout << "yumm!" << std::endl;
+		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+		    + " ate item — saturation restored to 100");
 		item_type = 0;
 
 	}

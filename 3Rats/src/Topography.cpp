@@ -1,4 +1,5 @@
 #include "Topography.h"
+#include "Logger.h"
 
 // N=0, E=1, S=2, W=3
 static const int DIR_DX[4] = { 0,  1,  0, -1 };
@@ -54,7 +55,8 @@ void Topography::carve_passages(int x, int y)
 
 void Topography::generate_connections()
 {
-    std::cout << "generating topology..." << std::endl;
+    Logger::info(Logger::TOPOLOGY, "generating room connections (" +
+        std::to_string(width) + "x" + std::to_string(height) + " grid)");
 
     for (int y = 0; y < height; y++)
         for (int x = 0; x < width; x++)
@@ -65,13 +67,31 @@ void Topography::generate_connections()
 
     carve_passages(0, 0);
 
-    std::cout << "room connection grid (N=1,E=2,S=4,W=8):" << std::endl;
+    // Log the connection grid (N=1,E=2,S=4,W=8)
+    Logger::debug(Logger::TOPOLOGY, "connection grid (bitmask N=1 E=2 S=4 W=8):");
     for (int y = 0; y < height; y++)
     {
+        std::string row;
         for (int x = 0; x < width; x++)
-            std::cout << room_connections[y][x] << " ";
-        std::cout << std::endl;
+            row += std::to_string(room_connections[y][x]) + " ";
+        Logger::debug(Logger::TOPOLOGY, "  " + row);
     }
+
+    // Log per-room door summary
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+        {
+            int id   = y * width + x;
+            int mask = room_connections[y][x];
+            std::string doors;
+            if (mask & 1) doors += "N";
+            if (mask & 2) doors += "E";
+            if (mask & 4) doors += "S";
+            if (mask & 8) doors += "W";
+            Logger::info(Logger::TOPOLOGY, "  room " + std::to_string(id)
+                + " [" + std::to_string(x) + "," + std::to_string(y) + "]"
+                + " doors=" + doors);
+        }
 }
 
 int Topography::get_layout(int room_id)

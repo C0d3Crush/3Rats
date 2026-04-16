@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include "Logger.h"
 
 void Controller::calculate_blocked_side(block_direction_counter& counter, std::vector<std::vector<bool>> blocked_i, int length)
 {
@@ -135,7 +136,9 @@ void Controller::make_goal()
 
 			item_search_id = random_item_number;
 
-			std::cout << "p: " << controller_number << "gx: " << goalX << " gy: " << goalY << std::endl;
+			Logger::debug(Logger::ACTEUR, "rat " + std::to_string(controller_number)
+			    + " new goal: item " + std::to_string(item_search_id)
+			    + " at (" + std::to_string(goalX) + "," + std::to_string(goalY) + ")");
 
 		}
 
@@ -154,7 +157,7 @@ void Controller::place_item()
 	else if (item_type == 1)
 	{
 		holds_item = false;
-		std::cout << "placed!" << std::endl;
+		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number) + " placed item");
 		item_type = 0;
 
 	}

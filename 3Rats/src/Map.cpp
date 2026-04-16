@@ -1,4 +1,5 @@
 #include "Map.h"
+#include "Logger.h"
 
 Map::Map()
 {
@@ -53,22 +54,16 @@ void Map::set_type(int type)
     {
 
     case MAZE_TYPE:
-        std::cout << "===========================================" << std::endl;
-        std::cout << "generating maze..." << std::endl;
-        std::cout << "items generation: " << item_generatio << std::endl;
+        Logger::info(Logger::MAP, "map #" + std::to_string(map_id) + " — generating maze");
         generate_maze(true, false);
         break;
 
     case GARDEN_TYPE:
-        std::cout << "===========================================" << std::endl;
-        std::cout << "generating garden..." << std::endl;
-        std::cout << "items generation: " << item_generatio << std::endl;
+        Logger::info(Logger::MAP, "map #" + std::to_string(map_id) + " — generating garden");
         generate_garden(true, true);
         break;
     case CAGE_TYPE:
-        std::cout << "===========================================" << std::endl;
-        std::cout << "generating cage..." << std::endl;
-        std::cout << "items generation: " << item_generatio << std::endl;
+        Logger::info(Logger::MAP, "map #" + std::to_string(map_id) + " — generating cage");
         generate_cage(false, false);
         break;
 
@@ -127,7 +122,7 @@ void Map::set_textures()
                 inspected_tile.is_hole = false;
                 inspected_tile.is_entrance = false;
                 inspected_tile.set_hight(0);
-                std::cout<<1<<std::endl;
+
                 break;
 
             case 1: //wall
@@ -139,7 +134,7 @@ void Map::set_textures()
                 inspected_tile.set_hight(1);
 
                 //inspected_tile = wall;
-                std::cout<<1<<std::endl;
+
 
                 break;
 
@@ -149,7 +144,7 @@ void Map::set_textures()
                 inspected_tile.is_hole = false;
                 inspected_tile.is_entrance = true;
                 inspected_tile.set_hight(0);
-                std::cout<<1<<std::endl;
+
                 break;
 
             case 3: //right (horizontal)
@@ -159,7 +154,7 @@ void Map::set_textures()
                 inspected_tile.is_hole = false;
                 inspected_tile.is_entrance = false;
                 inspected_tile.set_hight(0);
-                std::cout<<1<<std::endl;
+
                 break;
 
             case 5: //up (vertical)
@@ -396,8 +391,9 @@ void Map::generate_maze(bool item_generation, bool entity_generation)
     trim_boarder(data, map_data);
     if (item_generation) set_items_to_map(map_data, item_data, height, width, 30);
 
-    std::cout << "Map #" << map_id << " (maze) tries=" << map_generation_try
-              << " doors=" << __builtin_popcount(connection_mask) << std::endl;
+    Logger::info(Logger::MAP, "map #" + std::to_string(map_id)
+        + " (maze) tries=" + std::to_string(map_generation_try)
+        + " doors=" + std::to_string(__builtin_popcount(connection_mask)));
     save_data(map_data, item_data);
 }
 
@@ -422,7 +418,8 @@ void Map::generate_garden(bool item_generation, bool entity_generation)
 
     if (entity_generation) set_entity_to_map(map_data, entity_data, height, width, 70);
 
-    std::cout << "Map #" << map_id << " (garden) doors=" << __builtin_popcount(connection_mask) << std::endl;
+    Logger::info(Logger::MAP, "map #" + std::to_string(map_id)
+        + " (garden) doors=" + std::to_string(__builtin_popcount(connection_mask)));
     save_data(map_data, item_data);
 }
 
@@ -463,7 +460,8 @@ void Map::generate_cage(bool item_generation, bool entity_generation)
 
     //if (item_generation) set_items_to_map(map_data, item_data, height, width, 70);  //20 meaning 1/20
 
-    std::cout << "Map #" << map_id << " (cage) doors=" << __builtin_popcount(connection_mask) << std::endl;
+    Logger::info(Logger::MAP, "map #" + std::to_string(map_id)
+        + " (cage) doors=" + std::to_string(__builtin_popcount(connection_mask)));
     save_data(map_data, item_data);
 }
 
@@ -540,7 +538,7 @@ int Map::rec_pos(int x, int y, std::vector<std::vector <int>>& arg, int& prev_di
 
     default:
         direction = ERROR_DIRECTION;
-        std::cout << "ERROR: Direction is wrong." << std::endl;
+        Logger::error(Logger::MAP, "rec_pos: invalid direction roll");
         break;
     }
 
@@ -608,13 +606,11 @@ void Map::place_doors(std::vector<std::vector<int>>& data, Door* door_array)
 
 void Map::print_vector(const std::vector<std::vector<int>>& arg, const int& size_x, const int& size_y)
 {
-    std::cout << "Vector: " << std::endl;
-
+    Logger::debug(Logger::MAP, "map #" + std::to_string(map_id) + " grid:");
     for (const auto& row : arg) {
-        for (const auto& element : row) {
-            std::cout << element;
-        }
-        std::cout << '\n';
+        std::string line;
+        for (const auto& element : row) line += std::to_string(element);
+        Logger::debug(Logger::MAP, "  " + line);
     }
 }
 
@@ -624,8 +620,10 @@ void Map::print_doors()
     for (int side = 0; side < 4; side++)
     {
         if (door_array[side].get_active())
-            std::cout << "Door " << names[side] << ": ["
-                      << door_array[side].get_x() << ";" << door_array[side].get_y() << "]" << std::endl;
+            Logger::info(Logger::MAP, "  map #" + std::to_string(map_id)
+                + " door " + names[side] + " ["
+                + std::to_string(door_array[side].get_x()) + ";"
+                + std::to_string(door_array[side].get_y()) + "]");
     }
 }
 

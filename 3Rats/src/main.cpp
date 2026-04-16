@@ -18,6 +18,7 @@
 #include "Pause.h"
 #include "Console.h"
 #include "Metrics.h"
+#include "Logger.h"
 
 int world_seed_generation(bool value)
 {
@@ -262,7 +263,7 @@ uint32_t generate_seed(int seed_generation)
 		break;
 	}
 
-	std::cout << seed << std::endl;
+	Logger::info(Logger::SYS, "Seed: " + std::to_string(seed));
 	return seed;
 }
 
@@ -294,11 +295,11 @@ int main(int argc, char* argv[])
 	const int player_amount = 3;
 	const int entity_amount = 1;
 
-	//SDL_Init(SDL_INIT_VIDEO);
+	Logger::init();
 
 	// Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cout << "SDL initialization failed: " << SDL_GetError() << std::endl;
+        Logger::error(Logger::SYS, std::string("SDL init failed: ") + SDL_GetError());
         return 1;
     }
 
@@ -313,22 +314,22 @@ int main(int argc, char* argv[])
 	// Create a renderer
 	renderTarget = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	if (renderTarget == nullptr) {
-        std::cout << "Failed to create renderer: " << SDL_GetError() << std::endl;
+        Logger::error(Logger::SYS, std::string("renderer creation failed: ") + SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
+	Logger::info(Logger::SYS, "SDL window + renderer created (" +
+	    std::to_string(screen_width) + "x" + std::to_string(screen_hight) + ")");
 
 	// Initialize SDL_ttf
 	if (TTF_Init() < 0)
-	{
-		std::cout << "Error: " << TTF_GetError() << std::endl;
-	}
+		Logger::error(Logger::SYS, std::string("TTF_Init failed: ") + TTF_GetError());
 
 	// Initialize SDL_image
     int imgFlags = IMG_INIT_PNG;
     if (!(IMG_Init(imgFlags) & imgFlags)) {
-        std::cout << "SDL_image initialization failed: " << IMG_GetError() << std::endl;
+        Logger::error(Logger::SYS, std::string("SDL_image init failed: ") + IMG_GetError());
         SDL_DestroyRenderer(renderTarget);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -551,6 +552,7 @@ int main(int argc, char* argv[])
 
 	IMG_Quit();
 	SDL_Quit();
+	Logger::shutdown();
 
 	return 0;
 
