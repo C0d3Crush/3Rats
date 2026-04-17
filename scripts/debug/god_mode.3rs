@@ -1,0 +1,16 @@
+-- god_mode.3rs
+-- Alle Ratten unverwundbar, kein Hunger, volle Geschwindigkeit
+-- Nützlich zum Erkunden und Testen
+
+god rat 0
+god rat 1
+god rat 2
+
+set saturation rat 0 100
+set saturation rat 1 100
+set saturation rat 2 100
+
+set hunger_rate 0.0
+set timescale 1.0
+
+log "god mode aktiv — kein Hunger, kein Schaden"
