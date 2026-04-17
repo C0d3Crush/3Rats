@@ -169,21 +169,35 @@ Implementierung: alle Entitäten (Rats, Enemies, Cat) implementieren ein gemeins
 
 Scripts sind Textdateien (`.3rs`) die aus der Console heraus geladen und ausgeführt werden. Sie können alle Console-Befehle aufrufen und eigene Logik enthalten.
 
-**8.1 Script-Ordner & externes Schreiben**
+**8.1 Pre-Start Scripts via Kommandozeilen-Argument**
+- Scripts können beim Spielstart als Argument übergeben werden: `./3Rats --script setup.3rs`
+- Mehrere Scripts möglich: `./3Rats --script worldgen.3rs --script debug.3rs`
+- Pre-Start Scripts laufen **vor** der World-Generation — sie können Generation-Parameter setzen bevor `init_topography` aufgerufen wird
+- Beispiel-Anwendungsfälle:
+  - Seed festlegen: `set seed 12345`
+  - Raum-Typen vorschreiben: `set room 0 garden`, `set room 5 maze`
+  - Enemy-Spawn in bestimmten Räumen konfigurieren
+  - Globale Spielparameter setzen: `set timescale 0.5`, `set hunger_rate 0`
+- Zwei Ausführungs-Phasen im `main()`:
+  1. **Pre-Generation** — Script läuft vor `init_topography()`; darf Generation-Parameter, Seed, Raum-Typen setzen
+  2. **Post-Generation** — optionales zweites Script läuft nach der kompletten Init; darf Entities und Items manipulieren
+- Unbekannte Befehle in Pre-Start Scripts werden geloggt und übersprungen (kein Crash)
+
+**8.2 Script-Ordner & externes Schreiben**
 - Scripts liegen in `scripts/` — direkt neben `build/` im Projekt-Root, damit sie aus dem laufenden Spiel über `../scripts/` erreichbar sind
 - Scripts können mit jedem Texteditor außerhalb des Spiels geschrieben und gespeichert werden
 - Dateiendung `.3rs` (3Rats Script)
 - Der Ordner wird beim ersten Start automatisch angelegt falls er nicht existiert
 - Unterordner sind erlaubt, z.B. `scripts/debug/`, `scripts/scenarios/`
 
-**8.2 Script-Browser in der Console**
+**8.3 Script-Browser in der Console**
 - `scripts` — listet alle `.3rs`-Dateien im `scripts/`-Ordner rekursiv auf, mit Unterordner-Struktur
 - `run <dateiname>` — lädt und führt ein Script aus `scripts/` aus, z.B. `run test.3rs` oder `run debug/setup.3rs`
 - `run` ohne Argument — öffnet einen Inline-Script-Modus in der Console (mehrzeilig, `end` zum Ausführen)
 - Scripts werden beim `run`-Befehl frisch von Disk gelesen — Änderungen im Editor sind sofort wirksam ohne Neustart
 - Scripts werden zeilenweise geparst und an denselben Command-Dispatcher wie die Console übergeben (Phase 7.3)
 
-**8.3 Script-Sprache**
+**8.4 Script-Sprache**
 
 *Variablen*
 ```
@@ -216,13 +230,13 @@ wait 2.0        -- wartet 2 Sekunden Spielzeit bevor nächste Zeile ausgeführt 
 -- das ist ein Kommentar
 ```
 
-**8.4 Script-Executor**
+**8.5 Script-Executor**
 - Klasse `ScriptExecutor` parst eine Script-Datei in eine Liste von `ScriptStatement`
 - Statements werden im Game-Loop schrittweise abgearbeitet (nicht blockierend — `wait` wird über einen Timer gelöst)
 - `ScriptExecutor` hält eine Referenz auf den Command-Dispatcher der Console
 - Fehler (unbekannter Befehl, falsche Argumente) werden in der Console ausgegeben mit Zeilen-Nummer
 
-**8.5 Script-Manager**
+**8.6 Script-Manager**
 - `ScriptManager` hält eine Queue aktiver Scripts — mehrere Scripts können gleichzeitig laufen
 - Scripts können andere Scripts aufrufen: `run other.3rs`
 - `stop` — bricht das aktuell laufende Script ab
@@ -240,7 +254,7 @@ Phase 4.1 → 4.2               World-Drops
 Phase 5.1 → 5.2 → 5.3 → 5.4  HP-Bars, Damage Numbers, Settings
 Phase 6.1 → 6.2               Multi-Enemy & Waves
 Phase 7.1 → 7.2 → 7.3        Console-Erweiterung & Parser-Refactor
-Phase 8.1 → 8.2 → 8.3 → 8.4 → 8.5  Scripting-System
+Phase 8.1 → 8.2 → 8.3 → 8.4 → 8.5 → 8.6  Scripting-System
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
