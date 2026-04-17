@@ -63,14 +63,39 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 
 ---
 
-### Phase 5 — Mehrere Enemies & Skalierung
+### Phase 5 — UI: HP-Bars, Damage Numbers & Settings
 
-**5.1 Enemy-Array**
+**5.1 HP-Bar für Ratten**
+- Saturation-Wert (0–100) wird als Balken über dem Rat angezeigt
+- Farbe interpoliert von grün (voll) → rot (leer)
+- Balken wird ausgeblendet wenn Saturation = 100 (voll)
+
+**5.2 HP-Bar für Enemies**
+- Gleiche Logik wie 5.1, über dem Enemy angezeigt
+- Wird eingeblendet sobald der Enemy Schaden nimmt, wieder ausgeblendet wenn HP = max
+
+**5.3 Floating Damage Numbers**
+- Bei jedem Schadens-Tick erscheint die Zahl in rot über dem getroffenen Charakter
+- Zahl schwebt nach oben und blendet über ~0.8 s aus (Position + Alpha animiert)
+- Klasse `DamageNumber { float x, y, alpha; int value; float lifetime; }`
+- `DamageNumberManager` hält eine Liste aktiver Zahlen, updated und rendert sie
+
+**5.4 Settings-System & Pause-Menü**
+- Struct `GameSettings { bool show_damage_numbers; ... }` — erweiterbar für spätere Optionen
+- `Pause`-Klasse (bereits vorhanden) bekommt ein Settings-Untermenü
+- Toggle "Damage Numbers: ON/OFF" im Pause-Menü steuerbar
+- Settings werden zur Laufzeit an `DamageNumberManager` und HP-Bar-Renderer weitergegeben
+
+---
+
+### Phase 6 — Mehrere Enemies & Skalierung
+
+**6.1 Enemy-Array**
 - `Enemy enemy_array[MAX_ENEMIES]` mit dynamischem Count
 - Jeder Enemy hat eigenen `home_map_id` und eigene Drop-Tabelle
 - Mehrere Enemy-Typen (schnell/langsam, viel/wenig Schaden) über Konfig-Struct oder Subklassen
 
-**5.2 Wave-System / Spawn-Timer**
+**6.2 Wave-System / Spawn-Timer**
 - Pro Raum: nach X Sekunden spawnt ein neuer Enemy nach
 - Neuer `WaveManager` (oder in `Topography`) tracked welche Räume noch Enemies bekommen
 
@@ -79,11 +104,12 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 ### Reihenfolge
 
 ```
-Phase 1.1 → 1.2 → 1.3   Item-Effekte, Food fertigstellen
-Phase 2.1 → 2.2          Inventory
-Phase 3.1 → 3.2          Enemy Drops + HP
-Phase 4.1 → 4.2          World-Drops
-Phase 5.1 → 5.2          Multi-Enemy & Waves
+Phase 1.1 → 1.2 → 1.3         Item-Effekte, Food fertigstellen
+Phase 2.1 → 2.2               Inventory
+Phase 3.1 → 3.2               Enemy Drops + HP
+Phase 4.1 → 4.2               World-Drops
+Phase 5.1 → 5.2 → 5.3 → 5.4  HP-Bars, Damage Numbers, Settings
+Phase 6.1 → 6.2               Multi-Enemy & Waves
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
