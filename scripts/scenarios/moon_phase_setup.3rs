@@ -1,0 +1,183 @@
+-- moon_phase_setup.3rs
+-- Passt Enemy-Spawns, Hunger-Decay und Food-Rate dynamisch an die aktuelle Mondphase an.
+-- Gedacht als Pre-Nacht-Script das jede Nacht automatisch ausgeführt wird.
+--
+-- Ausführen: run scenarios/moon_phase_setup.3rs
+-- Als Pre-Start Arg: ./3Rats --script scenarios/moon_phase_setup.3rs
+
+include "utils/clear_all.3rs"
+
+var phase    = get moon_phase
+var moon_day = get moon_day
+
+log "Mondphase: " + $phase + " (Tag " + $moon_day + " im Zyklus)"
+
+-- ── Neumond (Tage 0–1) ────────────────────────────────────────────────────
+if $phase == "new_moon"
+    log "Neumond — ruhige Nacht."
+    set hunger_rate    1.0
+    set item_spawn_rate 8       -- mehr Food
+    set enemy_speed    80.0
+    set enemy_damage   3
+
+    -- wenige, langsame Enemies
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Zunehmende Sichel (Tage 2–4) ─────────────────────────────────────────
+if $phase == "waxing_crescent"
+    log "Zunehmende Sichel — normale Nacht."
+    set hunger_rate    1.2
+    set item_spawn_rate 10
+    set enemy_speed    100.0
+    set enemy_damage   5
+
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Erstes Viertel (Tage 5–7) ────────────────────────────────────────────
+if $phase == "first_quarter"
+    log "Erstes Viertel — leicht unruhig."
+    set hunger_rate    1.4
+    set item_spawn_rate 10
+    set enemy_speed    110.0
+    set enemy_damage   6
+
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Zunehmender Mond (Tage 8–13) ─────────────────────────────────────────
+if $phase == "waxing_gibbous"
+    log "Zunehmender Mond — mehr Enemies."
+    set hunger_rate    1.6
+    set item_spawn_rate 12
+    set enemy_speed    120.0
+    set enemy_damage   7
+
+    -- pro Garden-Raum zwei Enemies
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy basic $map
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Vollmond (Tage 14–15) ─────────────────────────────────────────────────
+if $phase == "full_moon"
+    log_warn "Vollmond — maximale Aktivität."
+    set hunger_rate     2.0
+    set item_spawn_rate 15      -- Food seltener
+    set enemy_speed     150.0
+    set enemy_damage    10
+    set enemy_hp        50
+
+    -- schnelle und normale Enemies in jedem Garden-Raum
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy fast  $map
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+
+    on curfew_warning
+        set timescale 1.5
+        log_warn "Vollmond — die Nacht endet schnell."
+    end
+end
+
+-- ── Abnehmender Mond (Tage 16–21) ────────────────────────────────────────
+if $phase == "waning_gibbous"
+    log "Abnehmender Mond — Aktivität sinkt."
+    set hunger_rate    1.6
+    set item_spawn_rate 12
+    set enemy_speed    120.0
+    set enemy_damage   7
+
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy basic $map
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Letztes Viertel (Tage 22–25) ─────────────────────────────────────────
+if $phase == "last_quarter"
+    log "Letztes Viertel — normale Nacht."
+    set hunger_rate    1.2
+    set item_spawn_rate 10
+    set enemy_speed    100.0
+    set enemy_damage   5
+
+    var map = 1
+    while $map < 25
+        if get room_type $map == "garden"
+            spawn enemy basic $map
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Abnehmende Sichel (Tage 26–28) ───────────────────────────────────────
+if $phase == "waning_crescent"
+    log "Abnehmende Sichel — ruhige Nacht zum Sammeln."
+    set hunger_rate    0.8
+    set item_spawn_rate 6       -- viel Food
+    set enemy_speed    80.0
+    set enemy_damage   3
+
+    -- nur einzelne, langsame Enemies
+    var map = 2
+    while $map < 25
+        if get room_type $map == "garden"
+            if $map % 2 == 0
+                spawn enemy basic $map
+            end
+        end
+        var map = $map + 1
+    end
+end
+
+-- ── Blutmond (Sonderereignis) ─────────────────────────────────────────────
+if $phase == "blood_moon"
+    log_err "Blutmond — maximale Gefahr."
+    include "scenarios/blood_moon.3rs"
+end
+
+-- ── Gemeinsame Hooks für alle Phasen ─────────────────────────────────────
+on night_start
+    log "Nacht beginnt — Phase: " + $phase
+end
+
+on night_end
+    log "Nacht überstanden. Nächste Phase in " + next_moon $phase + " Tagen."
+end
+
+on game_over
+    log_err "Game Over — Mondphase war: " + $phase
+end

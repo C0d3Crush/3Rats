@@ -444,14 +444,74 @@ Phase 6.1 → 6.2                              Multi-Enemy & Waves
 Phase 7.1 → 7.2 → 7.3 → 7.4 → 7.5          Nacht-Zyklus & Kern-Gameplay Loop
 Phase 8.1 → 8.2 → 8.3                       Console-Erweiterung & Parser-Refactor
 Phase 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6   Scripting-System
-Phase 10.1 → 10.2 → 10.3 → 10.4            Test-Suite
+Phase 10.1 → 10.2 → 10.3 → 10.4            Datum & Mondphasen-System
+Phase 11.1 → 11.2 → 11.3 → 11.4            Test-Suite
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
 
 ---
 
-### Phase 10 — Test-Suite
+### Phase 10 — Datum & Mondphasen-System
+
+Jede Nacht entspricht einem Spieltag. Der aktuelle Tag bestimmt die Mondphase, welche Enemy-Spawns, Hunger-Decay, Licht und Schwierigkeit beeinflusst. Ein vollständiger Mondzyklus dauert 29 Spieltage.
+
+**10.1 Datum-System**
+- Klasse `Calendar` hält: `int day` (absoluter Tag seit Spielstart), `int month`, `int year`
+- Tag wird bei jedem erfolgreichen Nacht-Abschluss (Phase 7) um 1 erhöht
+- Mondphase wird aus `day % 29` berechnet — deterministisch, kein Zufall
+- Konsolen-Befehle:
+  - `get date` — gibt aktuelles Datum aus, z.B. `Tag 14, Monat 1`
+  - `get day` — gibt absoluten Tag-Zähler zurück
+  - `get moon_phase` — gibt aktuellen Mondphasen-Namen zurück
+  - `get moon_day` — gibt Tag innerhalb des aktuellen 29-Tage-Zyklus zurück (0–28)
+  - `set date <day>` — setzt absoluten Tag direkt (für Scripts und Testing)
+
+**10.2 Mondphasen & ihre Eigenschaften**
+
+Der 29-Tage-Zyklus ist in 8 Phasen unterteilt:
+
+| Phase | Tage im Zyklus | Name | Eigenschaften |
+|---|---|---|---|
+| 0 | 0–1 | **Neumond** | Dunkelste Nacht — Enemies langsamer, seltener; Ratten schwerer zu sehen (kein Gameplay-Effekt, aber visuell dunkler) |
+| 1 | 2–4 | **Zunehmende Sichel** | Normale Bedingungen, leichte Enemy-Aktivität |
+| 2 | 5–7 | **Erstes Viertel** | Enemies normal aktiv, Hunger-Decay leicht erhöht |
+| 3 | 8–13 | **Zunehmender Mond** | Mehr Enemy-Spawns, Food etwas seltener |
+| 4 | 14–15 | **Vollmond** | Maximale Enemy-Aktivität — schneller, mehr Schaden, doppelte Spawn-Rate; helle Nacht |
+| 5 | 16–21 | **Abnehmender Mond** | Enemy-Aktivität sinkt langsam wieder |
+| 6 | 22–25 | **Letztes Viertel** | Normale Bedingungen |
+| 7 | 26–28 | **Abnehmende Sichel** | Ruhige Nacht — weniger Enemies, mehr Food; gute Nacht zum Sammeln |
+
+**Blutmond (Sonderereignis)**
+- Tritt nicht nach Zyklus auf — erscheint zufällig ca. alle 8–15 Vollmonde
+- Erkennbar durch rote Einfärbung des Fade-Overlays beim Nacht-Übergang
+- Eigenschaften: maximale Enemy-Geschwindigkeit, dreifacher Hunger-Decay, Curfew 1 Stunde früher, Enemy-Drops erhöht
+- `get moon_phase` gibt `"blood_moon"` zurück wenn aktiv
+- Blutmond kann per Script erzwungen werden: `set moon blood_moon`
+
+**10.3 Mondphasen-Effekte im Spiel**
+- `Clock` und `Fade` (bereits vorhanden) zeigen Mondphase visuell an — Helligkeit des Hintergrunds variiert
+- `Enemy` liest bei Spawn `Calendar::get_phase_modifier()` — gibt Struct mit `speed_mult`, `damage_mult`, `spawn_rate_mult` zurück
+- `Acteur` Hunger-Decay multipliziert mit `phase_modifier.hunger_mult`
+- Garden-Raum Item-Spawn-Rate multipliziert mit `phase_modifier.food_mult`
+
+**10.4 Console-Befehle für Datum & Mond**
+```
+get date                    -- "Tag 14, Monat 1, Jahr 1"
+get day                     -- 14
+get moon_phase              -- "full_moon"
+get moon_day                -- 14  (Tag im 29er Zyklus)
+set date 14                 -- springt zu Tag 14
+set moon full_moon          -- erzwingt Vollmond für diese Nacht
+set moon blood_moon         -- erzwingt Blutmond
+set moon new_moon           -- erzwingt Neumond
+next_moon full_moon         -- gibt zurück in wie vielen Tagen der nächste Vollmond ist
+next_moon blood_moon        -- gibt zurück ob und wann der nächste Blutmond kommt
+```
+
+---
+
+### Phase 11 — Test-Suite
 
 **Framework: GoogleTest** via CMake `FetchContent` — kein manuelles Installieren nötig, läuft im selben Build-System wie das Spiel. Tests liegen in `tests/` und werden als separates Binary `3Rats_tests` gebaut.
 
