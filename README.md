@@ -169,12 +169,21 @@ Implementierung: alle Entitäten (Rats, Enemies, Cat) implementieren ein gemeins
 
 Scripts sind Textdateien (`.3rs`) die aus der Console heraus geladen und ausgeführt werden. Sie können alle Console-Befehle aufrufen und eigene Logik enthalten.
 
-**8.1 Script-Ausführung aus der Console**
-- `run <dateiname>` — lädt und führt ein Script aus `scripts/` aus, z.B. `run test.3rs`
+**8.1 Script-Ordner & externes Schreiben**
+- Scripts liegen in `scripts/` — direkt neben `build/` im Projekt-Root, damit sie aus dem laufenden Spiel über `../scripts/` erreichbar sind
+- Scripts können mit jedem Texteditor außerhalb des Spiels geschrieben und gespeichert werden
+- Dateiendung `.3rs` (3Rats Script)
+- Der Ordner wird beim ersten Start automatisch angelegt falls er nicht existiert
+- Unterordner sind erlaubt, z.B. `scripts/debug/`, `scripts/scenarios/`
+
+**8.2 Script-Browser in der Console**
+- `scripts` — listet alle `.3rs`-Dateien im `scripts/`-Ordner rekursiv auf, mit Unterordner-Struktur
+- `run <dateiname>` — lädt und führt ein Script aus `scripts/` aus, z.B. `run test.3rs` oder `run debug/setup.3rs`
 - `run` ohne Argument — öffnet einen Inline-Script-Modus in der Console (mehrzeilig, `end` zum Ausführen)
+- Scripts werden beim `run`-Befehl frisch von Disk gelesen — Änderungen im Editor sind sofort wirksam ohne Neustart
 - Scripts werden zeilenweise geparst und an denselben Command-Dispatcher wie die Console übergeben (Phase 7.3)
 
-**8.2 Script-Sprache**
+**8.3 Script-Sprache**
 
 *Variablen*
 ```
@@ -207,13 +216,13 @@ wait 2.0        -- wartet 2 Sekunden Spielzeit bevor nächste Zeile ausgeführt 
 -- das ist ein Kommentar
 ```
 
-**8.3 Script-Executor**
+**8.4 Script-Executor**
 - Klasse `ScriptExecutor` parst eine Script-Datei in eine Liste von `ScriptStatement`
 - Statements werden im Game-Loop schrittweise abgearbeitet (nicht blockierend — `wait` wird über einen Timer gelöst)
 - `ScriptExecutor` hält eine Referenz auf den Command-Dispatcher der Console
 - Fehler (unbekannter Befehl, falsche Argumente) werden in der Console ausgegeben mit Zeilen-Nummer
 
-**8.4 Script-Manager**
+**8.5 Script-Manager**
 - `ScriptManager` hält eine Queue aktiver Scripts — mehrere Scripts können gleichzeitig laufen
 - Scripts können andere Scripts aufrufen: `run other.3rs`
 - `stop` — bricht das aktuell laufende Script ab
@@ -231,7 +240,7 @@ Phase 4.1 → 4.2               World-Drops
 Phase 5.1 → 5.2 → 5.3 → 5.4  HP-Bars, Damage Numbers, Settings
 Phase 6.1 → 6.2               Multi-Enemy & Waves
 Phase 7.1 → 7.2 → 7.3        Console-Erweiterung & Parser-Refactor
-Phase 8.1 → 8.2 → 8.3 → 8.4  Scripting-System
+Phase 8.1 → 8.2 → 8.3 → 8.4 → 8.5  Scripting-System
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
