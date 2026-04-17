@@ -1,0 +1,10 @@
+-- clear_all.3rs
+-- Räumt alle Items aus allen Räumen und entfernt alle aktiven Enemies
+-- Nützlich als sauberer Ausgangspunkt vor Szenario-Scripts
+
+var map = 0
+while $map < 25
+    clear items $map
+    clear enemies $map
+    var map = $map + 1
+end

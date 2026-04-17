@@ -1,0 +1,89 @@
+-- blood_moon.3rs
+-- Blutmond-Nacht: maximale Schwierigkeit
+-- Schnelle Enemies in jedem Garden-Raum, kaum Food, kurzes Zeitfenster, hoher Hunger-Decay
+--
+-- Ausführen: run scenarios/blood_moon.3rs
+-- Als Pre-Start Arg: ./3Rats --script scenarios/blood_moon.3rs
+
+include "utils/clear_all.3rs"
+
+-- ── Zeit & Atmosphäre ──────────────────────────────────────────────────────
+set time 22 0               -- Nacht beginnt um 22:00
+set timescale 1.0           -- normale Geschwindigkeit am Anfang
+
+-- Zeitfenster verkürzen: Rückkehr bis 04:30 statt 06:00
+set curfew_hour   4
+set curfew_minute 30
+
+-- ── Hunger & Schwierigkeit ─────────────────────────────────────────────────
+set hunger_rate 3.0         -- dreifacher Hunger-Decay
+set saturation rat 0 80     -- Ratten starten leicht hungrig
+set saturation rat 1 80
+set saturation rat 2 80
+
+-- ── Food sehr selten spawnen ───────────────────────────────────────────────
+-- item_spawn_rate steuert die Wahrscheinlichkeit in generate_garden()
+set item_spawn_rate 5       -- 1/5 statt normal 1/10 (also seltener)
+
+-- ── Enemies: jeden Garden-Raum besetzen ───────────────────────────────────
+var map = 1
+while $map < 25
+    if get room_type $map == "garden"
+        spawn enemy fast $map       -- schneller Enemy als Hauptbedrohung
+        spawn enemy basic $map      -- zweiter Enemy pro Raum
+    end
+    var map = $map + 1
+end
+
+-- Enemies sind stärker
+set enemy_speed    160.0
+set enemy_damage   10
+set enemy_hp       60
+
+log "Blutmond aktiv — viel Glück."
+
+-- ── Event Hooks ───────────────────────────────────────────────────────────
+
+on night_start
+    log_warn "Die Nacht beginnt. Irgendetwas stimmt nicht."
+end
+
+on curfew_warning
+    -- Zeit läuft schneller wenn die Deadline naht
+    set timescale 1.8
+    log_warn "Der Morgen kommt. Lauft."
+end
+
+on rat_hurt 0
+    -- wenn Rat 0 unter 20 fällt: einmalig ein Food spawnen als letzte Chance
+    if get saturation rat 0 < 20
+        spawn item food
+        log_warn "letztes Food gespawnt"
+    end
+end
+
+on rat_hurt 1
+    if get saturation rat 1 < 20
+        spawn item food
+    end
+end
+
+on rat_hurt 2
+    if get saturation rat 2 < 20
+        spawn item food
+    end
+end
+
+on enemy_death
+    -- seltene Chance auf Speed-Boost als Drop
+    spawn item speed_boost
+end
+
+on night_end
+    set timescale 1.0
+    log "Ihr habt überlebt. Diesmal."
+end
+
+on game_over
+    log_err "Blutmond — sie wurden gefunden."
+end
