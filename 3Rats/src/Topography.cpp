@@ -1,5 +1,7 @@
 #include "Topography.h"
 #include "Logger.h"
+#include <sstream>
+#include <iomanip>
 
 // N=0, E=1, S=2, W=3
 static const int DIR_DX[4] = { 0,  1,  0, -1 };
@@ -67,31 +69,104 @@ void Topography::generate_connections()
 
     carve_passages(0, 0);
 
-    // Log the connection grid (N=1,E=2,S=4,W=8)
-    Logger::debug(Logger::TOPOLOGY, "connection grid (bitmask N=1 E=2 S=4 W=8):");
+    // Visual topology map
+    Logger::info(Logger::TOPOLOGY, "topology map  legend: [id]=room  -=E/W connection  |=N/S connection");
+    Logger::info(Logger::TOPOLOGY, "");
+
     for (int y = 0; y < height; y++)
     {
-        std::string row;
-        for (int x = 0; x < width; x++)
-            row += std::to_string(room_connections[y][x]) + " ";
-        Logger::debug(Logger::TOPOLOGY, "  " + row);
-    }
-
-    // Log per-room door summary
-    for (int y = 0; y < height; y++)
+        // Room row: [00]-[01] [02] ...
+        std::string room_row = "  ";
         for (int x = 0; x < width; x++)
         {
-            int id   = y * width + x;
-            int mask = room_connections[y][x];
-            std::string doors;
-            if (mask & 1) doors += "N";
-            if (mask & 2) doors += "E";
-            if (mask & 4) doors += "S";
-            if (mask & 8) doors += "W";
-            Logger::info(Logger::TOPOLOGY, "  room " + std::to_string(id)
-                + " [" + std::to_string(x) + "," + std::to_string(y) + "]"
-                + " doors=" + doors);
+            int id = y * width + x;
+            std::ostringstream cell;
+            cell << "[" << std::setw(2) << std::setfill('0') << id << "]";
+            room_row += cell.str();
+
+            if (x < width - 1)
+                room_row += (room_connections[y][x] & (1 << 1)) ? "-" : " ";  // E bit
         }
+        Logger::info(Logger::TOPOLOGY, room_row);
+
+        // Connector row: vertical connections to next row
+        if (y < height - 1)
+        {
+            std::string conn_row = "  ";
+            for (int x = 0; x < width; x++)
+            {
+                conn_row += (room_connections[y][x] & (1 << 2)) ? " |  " : "    ";  // S bit
+                if (x < width - 1) conn_row += " ";
+            }
+            Logger::info(Logger::TOPOLOGY, conn_row);
+        }
+    }
+    Logger::info(Logger::TOPOLOGY, "");
+}
+
+void Topography::log_world_map()
+{
+    // Each room cell: 6 cols wide (5 interior + shared right border), 3 rows tall (2 interior + shared bottom border)
+    // Full grid: width*6+1 cols, height*3+1 rows
+    int gw = width  * 6 + 1;
+    int gh = height * 3 + 1;
+
+    std::vector<std::string> g(gh, std::string(gw, ' '));
+
+    // ── corners ──────────────────────────────────────────────────────────────
+    for (int ry = 0; ry <= height; ry++)
+        for (int rx = 0; rx <= width; rx++)
+            g[ry * 3][rx * 6] = '+';
+
+    for (int ry = 0; ry < height; ry++)
+    {
+        for (int rx = 0; rx < width; rx++)
+        {
+            // ── top horizontal wall ──────────────────────────────────────────
+            // Open (gap) if the room above connects south to this room
+            bool n_open = (ry > 0) && (room_connections[ry-1][rx] & (1 << 2));
+            for (int c = 1; c <= 5; c++)
+                g[ry*3][rx*6+c] = (n_open && c >= 2 && c <= 4) ? ' ' : '-';
+
+            // ── left vertical wall ───────────────────────────────────────────
+            // Open if the room to the left connects east to this room
+            bool w_open = (rx > 0) && (room_connections[ry][rx-1] & (1 << 1));
+            for (int r = 1; r <= 2; r++)
+                g[ry*3+r][rx*6] = w_open ? ' ' : '|';
+
+            // ── room interior: id + door hints ───────────────────────────────
+            int   id   = ry * width + rx;
+            int   mask = room_connections[ry][rx];
+            std::ostringstream ss;
+            ss << std::setw(2) << std::setfill('0') << id;
+            // centre of interior is at (ry*3+1, rx*6+2)
+            g[ry*3+1][rx*6+2] = ss.str()[0];
+            g[ry*3+1][rx*6+3] = ss.str()[1];
+
+            // small door arrows inside the room
+            if (mask & (1<<0)) g[ry*3+1][rx*6+1] = '^';   // N
+            if (mask & (1<<1)) g[ry*3+1][rx*6+5] = '>';   // E
+            if (mask & (1<<2)) g[ry*3+2][rx*6+3] = 'v';   // S
+            if (mask & (1<<3)) g[ry*3+1][rx*6+1] = '<';   // W (overwrites N if both, rare)
+        }
+
+        // ── rightmost vertical wall ──────────────────────────────────────────
+        for (int r = 1; r <= 2; r++)
+            g[ry*3+r][width*6] = '|';
+    }
+
+    // ── bottom wall of last room row ─────────────────────────────────────────
+    for (int rx = 0; rx < width; rx++)
+        for (int c = 1; c <= 5; c++)
+            g[height*3][rx*6+c] = '-';
+
+    Logger::info(Logger::TOPOLOGY, "world map  legend: ## room id  ^ v < > door directions");
+    Logger::info(Logger::TOPOLOGY, "");
+    for (const auto& row : g)
+        Logger::info(Logger::TOPOLOGY, "  " + row);
+    Logger::info(Logger::TOPOLOGY, "");
+
+    log_world_map();
 }
 
 int Topography::get_layout(int room_id)

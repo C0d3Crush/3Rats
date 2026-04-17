@@ -74,4 +74,5 @@ public:
 	void set_move_speed(float speed) { moveSpeed = speed; }
 	void debug_give_item(Item* items, int count);
 	int  get_saturation() const { return saturation; }
+	void reduce_saturation(int amount);
 };

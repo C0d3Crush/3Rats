@@ -39,6 +39,7 @@ public:
 
     void set_up();
     void generate_connections();
+    void log_world_map();
 
     int  get_layout(int room_id);           // returns connection bitmask for room
     int  get_neighbor(int room_id, int direction);  // returns neighbor room id, or -1

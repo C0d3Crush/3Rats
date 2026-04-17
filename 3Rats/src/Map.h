@@ -25,6 +25,7 @@ private:
 	};
 
 	int map_id;
+	int map_type = -1;
 
 	int map_generation_try;
 
@@ -88,6 +89,7 @@ public:
 
 
 	int get_map_id();
+	int get_type() const { return map_type; }
 	int get_hight();
 	int get_width();
 	Door get_door(int index);

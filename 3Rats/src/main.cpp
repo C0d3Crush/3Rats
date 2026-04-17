@@ -19,6 +19,7 @@
 #include "Console.h"
 #include "Metrics.h"
 #include "Logger.h"
+#include "Enemy.h"
 
 int world_seed_generation(bool value)
 {
@@ -396,6 +397,22 @@ int main(int argc, char* argv[])
 	Acteur entity[entity_amount];
 	init_entity(renderTarget, entity, entity_amount, topography, random);
 
+	// Find a random garden room (type 1) for the enemy spawn
+	std::vector<int> garden_rooms;
+	for (int i = 1; i < map_amount; i++) {
+		if (map_array[i].get_type() == 1)
+			garden_rooms.push_back(i);
+	}
+	int enemy_map_id = garden_rooms.empty() ? 1
+	    : garden_rooms[random.roll_custom_dice((int)garden_rooms.size()) - 1];
+
+	Enemy enemy;
+	enemy.set_surface(renderTarget);
+	enemy.set_texture("../npc_textures/entity.png");
+	enemy.set_cords(4 * 64, 2 * 64);
+	enemy.set_topography(&topography);
+	enemy.set_home_map(enemy_map_id);
+
 	Metrics metrics;
 	metrics.init(renderTarget, player_array, player_amount, &topography);
 
@@ -509,6 +526,7 @@ int main(int argc, char* argv[])
 		}
 
 		entity[0].update(delta);
+		enemy.update(delta, player_array, player_amount);
 		std::string pause_message = "Pause.";
 		pause.update(pause_message);
 		clock.update(delta);
@@ -531,6 +549,7 @@ int main(int argc, char* argv[])
 			player_array[i].Draw(renderTarget);
 		}
 		entity[0].draw(renderTarget);
+		enemy.draw(renderTarget);
 		clock.draw(renderTarget);
 		fade.draw(renderTarget);
 		pause.draw(renderTarget);

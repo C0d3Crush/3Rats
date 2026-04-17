@@ -52,6 +52,8 @@ void Map::set_type(int type)
     const int GARDEN_TYPE = 1;
     const int CAGE_TYPE = 2;
 
+    map_type = type;
+
     bool item_generatio = true;
 
     switch (type)

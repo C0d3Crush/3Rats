@@ -514,6 +514,12 @@ void Acteur::debug_give_item(Item* items, int count)
     }
 }
 
+void Acteur::reduce_saturation(int amount)
+{
+	saturation -= amount;
+	if (saturation < 0) saturation = 0;
+}
+
 void Acteur::use_item()
 {
 	if (item_type == 0)
