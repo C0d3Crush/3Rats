@@ -128,6 +128,15 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 - `freeze enemy` — Enemy-Bewegung einfrieren / wieder aktivieren
 - `god <rat>` — kein Hunger-Decay, unendliche Saturation für diesen Rat
 
+*Entity-Inspector (gilt für Rats, Enemies, Cat und alle zukünftigen Entitäten)*
+- `select <entity_type> <id>` — wählt eine Entität als aktives Ziel aus, z.B. `select rat 0`, `select enemy 2`, `select cat 0`
+- `get <attribute>` — gibt einen Attributwert der ausgewählten Entität aus, z.B. `get speed`, `get hp`, `get pos`
+- `set <attribute> <value>` — setzt einen Attributwert der ausgewählten Entität, z.B. `set speed 300`, `set hp 50`, `set saturation 80`
+- `list entities` — gibt alle vorhandenen Entitäten mit ID, Typ und aktuellem Raum aus
+- `info` — gibt alle Attribute der aktuell ausgewählten Entität auf einmal aus
+
+Implementierung: alle Entitäten (Rats, Enemies, Cat) implementieren ein gemeinsames Interface `IInspectable { virtual std::string get_attr(const std::string&); virtual void set_attr(const std::string&, const std::string&); }`. Die Console hält einen `IInspectable*`-Zeiger auf die aktuell ausgewählte Entität.
+
 *World*
 - `tp <map_id>` — teleportiert alle Rats in den angegebenen Raum
 - `regen <map_id>` — einzelnen Raum neu generieren
