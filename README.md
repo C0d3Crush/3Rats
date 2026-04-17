@@ -113,11 +113,40 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 - Unbekannte Typen geben eine Fehlermeldung in der Console aus
 
 **7.2 Weitere Console-Befehle**
-- `spawn enemy` — spawnt einen Enemy im aktuellen Raum
-- `set saturation <rat> <value>` — setzt Saturation eines Rats direkt (0–100)
+
+*Spawn*
+- `spawn item <type>` — spawnt Item an Position von Rat 0
+- `spawn enemy <type> <map_id>` — spawnt einen bestimmten Enemy-Typ in einem bestimmten Raum; ohne `map_id` wird der aktuelle Raum verwendet
+- `fill items` — spawnt alle Item-Typen im aktuellen Raum
+- `give all` — gibt Rat 0 jeden Item-Typ direkt
+
+*Actors*
+- `set saturation <rat> <value>` — setzt Saturation eines Rats (0–100)
 - `set speed <rat> <value>` — überschreibt Move-Speed eines Rats temporär
+- `set hp enemy <value>` — setzt HP des Enemies im aktuellen Raum
+- `kill enemy` — Enemy im aktuellen Raum sofort töten
+- `freeze enemy` — Enemy-Bewegung einfrieren / wieder aktivieren
+- `god <rat>` — kein Hunger-Decay, unendliche Saturation für diesen Rat
+
+*World*
 - `tp <map_id>` — teleportiert alle Rats in den angegebenen Raum
-- `list items` — gibt alle Items im aktuellen Raum mit Typ und Position aus
+- `regen <map_id>` — einzelnen Raum neu generieren
+- `set room <map_id> <type>` — Raum-Typ (maze/garden/cage) zur Laufzeit ändern
+- `clear items` — alle Items im aktuellen Raum entfernen
+- `reveal` — Topologie aller 25 Räume in der Console ausgeben
+
+*Zeit & Simulation*
+- `set time <hour>` — Spielzeit direkt setzen
+- `timescale <factor>` — Spielgeschwindigkeit skalieren (0.5 = slow-mo, 2.0 = schnell)
+- `pause hunger` — Hunger-Decay global einfrieren / wieder aktivieren
+- `noclip <rat>` — Tile-Collision für diesen Rat deaktivieren
+
+*Info & Logging*
+- `info rat <n>` — alle Werte von Rat n ausgeben (pos, saturation, inventory, goal)
+- `info map` — aktuellen Raum-Typ, Verbindungen und Door-Positionen ausgeben
+- `fps <cap>` — FPS-Cap setzen
+- `seed` — aktuellen World-Seed ausgeben
+- `log level <debug|info|warn|err>` — Logger-Level zur Laufzeit ändern
 - `help` — listet alle verfügbaren Befehle in der Console auf
 
 **7.3 Console-Parser refactoren**
