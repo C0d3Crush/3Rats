@@ -104,6 +104,29 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 
 ---
 
+### Phase 7 — In-Game Console Erweiterung
+
+**7.1 Generischer `spawn item`-Befehl**
+- Bestehenden Food-Spawn-Befehl ersetzen durch: `spawn item <type>` — spawnt jedes Item nach `ItemType`
+- Beispiele: `spawn item food`, `spawn item speed_boost`, `spawn item shield`
+- Item wird an der Position von Rat 0 in die Welt gesetzt
+- Unbekannte Typen geben eine Fehlermeldung in der Console aus
+
+**7.2 Weitere Console-Befehle**
+- `spawn enemy` — spawnt einen Enemy im aktuellen Raum
+- `set saturation <rat> <value>` — setzt Saturation eines Rats direkt (0–100)
+- `set speed <rat> <value>` — überschreibt Move-Speed eines Rats temporär
+- `tp <map_id>` — teleportiert alle Rats in den angegebenen Raum
+- `list items` — gibt alle Items im aktuellen Raum mit Typ und Position aus
+- `help` — listet alle verfügbaren Befehle in der Console auf
+
+**7.3 Console-Parser refactoren**
+- Befehle als tokenisierte Strings parsen (`command arg1 arg2 ...`) statt Einzelzeichen-Vergleiche
+- `Console` registriert Befehle als Map: `std::unordered_map<std::string, CommandFn>`
+- Neue Befehle können ohne Änderung am Parser-Core hinzugefügt werden
+
+---
+
 ### Reihenfolge
 
 ```
@@ -113,6 +136,7 @@ Phase 3.1 → 3.2               Enemy Drops + HP
 Phase 4.1 → 4.2               World-Drops
 Phase 5.1 → 5.2 → 5.3 → 5.4  HP-Bars, Damage Numbers, Settings
 Phase 6.1 → 6.2               Multi-Enemy & Waves
+Phase 7.1 → 7.2 → 7.3        Console-Erweiterung & Parser-Refactor
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
