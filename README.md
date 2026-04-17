@@ -291,9 +291,43 @@ Phase 6.1 → 6.2                              Multi-Enemy & Waves
 Phase 7.1 → 7.2 → 7.3 → 7.4 → 7.5          Nacht-Zyklus & Kern-Gameplay Loop
 Phase 8.1 → 8.2 → 8.3                       Console-Erweiterung & Parser-Refactor
 Phase 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6   Scripting-System
+Phase 10.1 → 10.2 → 10.3 → 10.4            Test-Suite
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
+
+---
+
+### Phase 10 — Test-Suite
+
+**Framework: GoogleTest** via CMake `FetchContent` — kein manuelles Installieren nötig, läuft im selben Build-System wie das Spiel. Tests liegen in `tests/` und werden als separates Binary `3Rats_tests` gebaut.
+
+**10.1 Unit Tests**
+- `Random` — Würfelergebnisse bleiben im erwarteten Bereich; gleicher Seed erzeugt identische Sequenz
+- `Acteur` Saturation — `reduce_saturation` geht nie unter 0, Wert bleibt immer 0–100
+- `Door` Platzierung — Türen landen nie auf Ecken, immer auf der korrekten Wand für ihre Seite
+- `Controller` Kollision — blockierte Richtungen korrekt aus Tile-Positionen berechnet
+- `Map` Daten — `save_data` / `get_tile` Indexberechnung korrekt für alle Gitterpositionen
+
+**10.2 Generierungs-Tests**
+- Maze — alle Türen des Raumes sind durch Gänge verbunden, kein Raum generiert mit hängendem `rec_pos`
+- Garden — Innenbereich hat keine Wand-Tiles, Türen korrekt gesetzt
+- Cage — generiert ohne Absturz, Boden-Tiles korrekt
+- 1-Door Maze — terminiert immer (Regression für alten Infinite-Loop Bug)
+- `rec_pos` — terminiert innerhalb einer maximalen Iterationsanzahl für jeden validen Input
+
+**10.3 Integrations-Tests**
+- Gleicher Seed → identisches Welt-Layout bei jedem Start
+- `Topography` — alle 25 Räume von Raum 0 aus erreichbar; Verbindungs-Bitmasks sind symmetrisch (wenn A→B dann B→A)
+- Tür-Übergang — Ratte landet auf der korrekten Seite des Nachbar-Raumes
+- Item Pickup → Use → Saturation wiederhergestellt
+- Enemy Schaden — Ratten-Saturation sinkt nach N Sekunden Kontakt
+
+**10.4 Simulations-Tests**
+- AI-Ratten finden ein erreichbares Item innerhalb von X simulierten Sekunden (kein Infinite Loop in `make_goal`)
+- Alle 25 Räume über Türen von Raum 0 erreichbar
+- Enemy steckt nach N Frames nicht dauerhaft in einer Wand fest
+- Enemy spawnt immer in einem Garden-Raum — nie in Maze oder Cage (Regression)
 
 ---
 
