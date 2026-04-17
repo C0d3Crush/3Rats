@@ -1,6 +1,6 @@
 # 3Rats
 
-A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally generated 5×5 room grid, collect food to survive, and avoid enemies.
+A 2D top-down game built with SDL2 (C++17). Three rats escape their cage every night while their owners sleep, explore a procedurally generated 5×5 room grid, collect food — and must return before dawn or it's game over.
 
 ---
 
@@ -104,7 +104,42 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 
 ---
 
-### Phase 7 — In-Game Console Erweiterung
+### Phase 7 — Nacht-Zyklus & Game Loop (Kern-Gameplay)
+
+Die Ratten sind nachts aktiv während die Besitzer schlafen. Jede Nacht ist eine Runde — wer nicht rechtzeitig zurück ist, wird entdeckt.
+
+**7.1 Aktive Spielzeit-Fenster**
+- Die Uhr (bereits vorhanden) definiert zwei Phasen pro Tag:
+  - **Nacht** (z.B. 22:00–06:00) — Ratten dürfen das Käfig-Zimmer verlassen, Türen sind offen
+  - **Tag** (06:00–22:00) — Besitzer wach, Ratten müssen im Käfig (map 0) sein
+- Beim Übergang von Nacht → Tag: alle Ratten die sich **nicht** in map 0 befinden → **Game Over**
+- Beim Übergang von Tag → Nacht: neue Runde beginnt, Welt wird teilweise neu generiert
+
+**7.2 Rückkehr-Mechanik**
+- Wenn die Uhr sich dem Morgen nähert (z.B. 05:00) erscheint eine visuelle Warnung — Uhr-Farbe wechselt, Screen-Rand pulsiert rot
+- Ab 05:30 läuft ein sichtbarer Countdown
+- Ratten müssen durch die Käfig-Tür (map 0 Entrance) zurück — nicht nur im Raum sein
+- Alle drei Ratten müssen zurück sein — eine fehlende Ratte = Game Over
+
+**7.3 Game Over & Tages-Auswertung**
+- Game Over Screen zeigt: wie lange überlebt, gesammelte Items, besuchte Räume
+- Kein harter Reset — optionaler "Retry same night" Modus mit gleichem Seed
+- Tages-Zähler (bereits in `Clock` vorhanden) zählt erfolgreich abgeschlossene Nächte
+
+**7.4 Schwierigkeits-Skalierung pro Nacht**
+- Jede Nacht wird das Zeitfenster minimal kürzer (z.B. −2 Minuten pro Nacht)
+- Enemies werden schneller, Hunger-Decay steigt leicht
+- Ab Nacht 5+: manche Türen sind nur bestimmte Zeit offen
+
+**7.5 Tag-Phase (Besitzer wach)**
+- Während des Tages läuft die Zeit schnell durch (kein aktives Gameplay, Zeitraffer-Effekt)
+- Kurze Zusammenfassung der letzten Nacht auf dem Screen
+- Ratten regenerieren Saturation im Käfig während des Tages
+
+---
+
+### Phase 8 — In-Game Console Erweiterung
+
 
 **7.1 Generischer `spawn item`-Befehl**
 - Bestehenden Food-Spawn-Befehl ersetzen durch: `spawn item <type>` — spawnt jedes Item nach `ItemType`
@@ -165,11 +200,11 @@ Implementierung: alle Entitäten (Rats, Enemies, Cat) implementieren ein gemeins
 
 ---
 
-### Phase 8 — Scripting-System
+### Phase 9 — Scripting-System
 
 Scripts sind Textdateien (`.3rs`) die aus der Console heraus geladen und ausgeführt werden. Sie können alle Console-Befehle aufrufen und eigene Logik enthalten.
 
-**8.1 Pre-Start Scripts via Kommandozeilen-Argument**
+**9.1 Pre-Start Scripts via Kommandozeilen-Argument**
 - Scripts können beim Spielstart als Argument übergeben werden: `./3Rats --script setup.3rs`
 - Mehrere Scripts möglich: `./3Rats --script worldgen.3rs --script debug.3rs`
 - Pre-Start Scripts laufen **vor** der World-Generation — sie können Generation-Parameter setzen bevor `init_topography` aufgerufen wird
@@ -183,21 +218,21 @@ Scripts sind Textdateien (`.3rs`) die aus der Console heraus geladen und ausgef�
   2. **Post-Generation** — optionales zweites Script läuft nach der kompletten Init; darf Entities und Items manipulieren
 - Unbekannte Befehle in Pre-Start Scripts werden geloggt und übersprungen (kein Crash)
 
-**8.2 Script-Ordner & externes Schreiben**
+**9.2 Script-Ordner & externes Schreiben**
 - Scripts liegen in `scripts/` — direkt neben `build/` im Projekt-Root, damit sie aus dem laufenden Spiel über `../scripts/` erreichbar sind
 - Scripts können mit jedem Texteditor außerhalb des Spiels geschrieben und gespeichert werden
 - Dateiendung `.3rs` (3Rats Script)
 - Der Ordner wird beim ersten Start automatisch angelegt falls er nicht existiert
 - Unterordner sind erlaubt, z.B. `scripts/debug/`, `scripts/scenarios/`
 
-**8.3 Script-Browser in der Console**
+**9.3 Script-Browser in der Console**
 - `scripts` — listet alle `.3rs`-Dateien im `scripts/`-Ordner rekursiv auf, mit Unterordner-Struktur
 - `run <dateiname>` — lädt und führt ein Script aus `scripts/` aus, z.B. `run test.3rs` oder `run debug/setup.3rs`
 - `run` ohne Argument — öffnet einen Inline-Script-Modus in der Console (mehrzeilig, `end` zum Ausführen)
 - Scripts werden beim `run`-Befehl frisch von Disk gelesen — Änderungen im Editor sind sofort wirksam ohne Neustart
 - Scripts werden zeilenweise geparst und an denselben Command-Dispatcher wie die Console übergeben (Phase 7.3)
 
-**8.4 Script-Sprache**
+**9.4 Script-Sprache**
 
 *Variablen*
 ```
@@ -230,13 +265,13 @@ wait 2.0        -- wartet 2 Sekunden Spielzeit bevor nächste Zeile ausgeführt 
 -- das ist ein Kommentar
 ```
 
-**8.5 Script-Executor**
+**9.5 Script-Executor**
 - Klasse `ScriptExecutor` parst eine Script-Datei in eine Liste von `ScriptStatement`
 - Statements werden im Game-Loop schrittweise abgearbeitet (nicht blockierend — `wait` wird über einen Timer gelöst)
 - `ScriptExecutor` hält eine Referenz auf den Command-Dispatcher der Console
 - Fehler (unbekannter Befehl, falsche Argumente) werden in der Console ausgegeben mit Zeilen-Nummer
 
-**8.6 Script-Manager**
+**9.6 Script-Manager**
 - `ScriptManager` hält eine Queue aktiver Scripts — mehrere Scripts können gleichzeitig laufen
 - Scripts können andere Scripts aufrufen: `run other.3rs`
 - `stop` — bricht das aktuell laufende Script ab
@@ -252,9 +287,10 @@ Phase 2.1 → 2.2               Inventory
 Phase 3.1 → 3.2               Enemy Drops + HP
 Phase 4.1 → 4.2               World-Drops
 Phase 5.1 → 5.2 → 5.3 → 5.4  HP-Bars, Damage Numbers, Settings
-Phase 6.1 → 6.2               Multi-Enemy & Waves
-Phase 7.1 → 7.2 → 7.3        Console-Erweiterung & Parser-Refactor
-Phase 8.1 → 8.2 → 8.3 → 8.4 → 8.5 → 8.6  Scripting-System
+Phase 6.1 → 6.2                              Multi-Enemy & Waves
+Phase 7.1 → 7.2 → 7.3 → 7.4 → 7.5          Nacht-Zyklus & Kern-Gameplay Loop
+Phase 8.1 → 8.2 → 8.3                       Console-Erweiterung & Parser-Refactor
+Phase 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6   Scripting-System
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
