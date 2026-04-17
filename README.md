@@ -81,10 +81,13 @@ A 2D top-down game built with SDL2 (C++17). Three rats navigate a procedurally g
 - `DamageNumberManager` hält eine Liste aktiver Zahlen, updated und rendert sie
 
 **5.4 Settings-System & Pause-Menü**
-- Struct `GameSettings { bool show_damage_numbers; ... }` — erweiterbar für spätere Optionen
+- Struct `GameSettings { bool show_damage_numbers; bool music_enabled; float music_volume; ... }` — erweiterbar für spätere Optionen
 - `Pause`-Klasse (bereits vorhanden) bekommt ein Settings-Untermenü
 - Toggle "Damage Numbers: ON/OFF" im Pause-Menü steuerbar
-- Settings werden zur Laufzeit an `DamageNumberManager` und HP-Bar-Renderer weitergegeben
+- Toggle "Music: ON/OFF" sowie ein Lautstärke-Slider (0–100) im Pause-Menü
+- Lautstärke-Änderung wird live an SDL_mixer (`Mix_VolumeMusic`) weitergegeben
+- `Sound`-Klasse (bereits stub) fertigstellen: `set_volume(float)`, `toggle_music()`
+- Settings werden zur Laufzeit an `DamageNumberManager`, HP-Bar-Renderer und `Sound` weitergegeben
 
 ---
 
