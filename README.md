@@ -445,7 +445,8 @@ Phase 7.1 → 7.2 → 7.3 → 7.4 → 7.5          Nacht-Zyklus & Kern-Gameplay 
 Phase 8.1 → 8.2 → 8.3                       Console-Erweiterung & Parser-Refactor
 Phase 9.1 → 9.2 → 9.3 → 9.4 → 9.5 → 9.6   Scripting-System
 Phase 10.1 → 10.2 → 10.3 → 10.4            Datum & Mondphasen-System
-Phase 11.1 → 11.2 → 11.3 → 11.4            Test-Suite
+Phase 11.1 → 11.2 → 11.3 → 11.4 → 11.5     Infinite World: Chunk-System
+Phase 12.1 → 12.2 → 12.3 → 12.4            Test-Suite
 ```
 
 Jede Phase ist eigenständig testbar und baut auf der vorherigen auf.
@@ -511,7 +512,58 @@ next_moon blood_moon        -- gibt zurück ob und wann der nächste Blutmond ko
 
 ---
 
-### Phase 11 — Test-Suite
+### Phase 11 — Infinite World: Chunk-System
+
+Aktuell ist die Welt ein fixer 5×5-Raum-Grid (eine `Topography`). Mit dem Chunk-System wird die Welt unbegrenzt: wenn eine Ratte die Grenze des aktuellen Chunks verlässt, wird on-the-fly ein neuer 5×5-Chunk generiert und nahtlos angebunden.
+
+**11.1 Chunk-Koordinaten & `ChunkManager`**
+- Jeder Chunk hat eine Chunk-Koordinate `(cx, cy)` im globalen Welt-Grid
+- Der Start-Chunk ist `(0, 0)`
+- Neuer Chunk wird generiert wenn `get_neighbor()` keinen Nachbarn im aktuellen Chunk findet und der Spieler eine Border-Room verlässt
+- `ChunkManager` hält eine `std::unordered_map<ChunkCoord, Topography*>` aller geladenen Chunks
+- Globale Room-ID: `chunk_coord + local_room_id` — eindeutig über die gesamte Welt
+
+**11.2 `Topography`-Refactor**
+- `Topography` behält seine interne 5×5-Logik unverändert — `ChunkManager` koordiniert zwischen Chunks
+- `room_connections[5][5]` bleibt chunk-lokal; Border-Verbindungen werden vom `ChunkManager` verwaltet
+- Border-Räume (Rand des 5×5-Grids): wenn ein Border-Raum eine Tür nach außen hat, zeigt diese auf den Nachbar-Chunk
+- `get_neighbor()` gibt bei Border-Rooms `CHUNK_BORDER` zurück statt `-1` — Signal an den `ChunkManager` einen neuen Chunk zu laden oder zu generieren
+- `map_array` wird von stack-alloziert auf `std::vector<Map>` umgestellt um dynamische Größen zu erlauben
+
+**11.3 Chunk-Generierung on demand**
+- Wenn Spieler Border-Room verlässt:
+  1. `ChunkManager` prüft ob Nachbar-Chunk bereits existiert
+  2. Existiert er: Chunk aus Memory laden, `set_textures()` aufrufen
+  3. Existiert er nicht: neuen Chunk generieren — `Topography::generate_connections()` mit neuem Seed (abgeleitet vom World-Seed + Chunk-Koordinate, damit gleicher World-Seed immer gleiche Welt erzeugt)
+- Border-Verbindung zwischen Chunks: die Ausgangs-Tür im alten Chunk und die Eingangs-Tür im neuen Chunk werden aufeinander ausgerichtet (gleiche Wand-Seite, gespiegelte Koordinate)
+- Tile- und Item-Arrays werden beim Chunk-Wechsel auf den neuen Chunk umgeschaltet
+
+**11.4 Memory-Management**
+- Maximal N Chunks gleichzeitig im Memory (z.B. N=9: aktueller + alle direkten Nachbarn)
+- Chunks die weiter entfernt sind werden serialisiert: `chunks/<cx>_<cy>.chunk` als Binärdatei
+- Beim Betreten eines bereits besuchten Chunks: von Disk laden statt neu generieren — Zustand (Items, Enemies) bleibt erhalten
+- `ChunkManager` tracked `last_visited` Timestamp pro Chunk für LRU-Eviction
+
+**11.5 Console & Script-Integration**
+- `get chunk` — gibt aktuelle Chunk-Koordinate zurück, z.B. `(2, -1)`
+- `get world_pos` — gibt absolute Weltposition zurück (Chunk + lokale Room-ID)
+- `tp chunk <cx> <cy>` — teleportiert zu einem bestimmten Chunk
+- `regen chunk <cx> <cy>` — generiert einen Chunk neu (verwirft gespeicherten Zustand)
+- `list chunks` — zeigt alle geladenen Chunks mit Koordinaten in der Console
+- Scripts können auf Chunk-Events reagieren:
+```
+on chunk_enter 2 0          -- wenn Chunk (2,0) betreten wird
+    spawn enemy boss 12     -- Boss in Raum 12 des Chunks
+end
+
+on new_chunk                -- wenn ein neuer, noch nie besuchter Chunk generiert wird
+    log "neues Gebiet entdeckt: " + get chunk
+end
+```
+
+---
+
+### Phase 12 — Test-Suite
 
 **Framework: GoogleTest** via CMake `FetchContent` — kein manuelles Installieren nötig, läuft im selben Build-System wie das Spiel. Tests liegen in `tests/` und werden als separates Binary `3Rats_tests` gebaut.
 
