@@ -283,11 +283,38 @@ void Map::set_textures()
             {
                 // item is carried by a rat — leave texture and position alone
             }
-            else if (data[h][w].second == 1)
+            else if (data[h][w].second >= 1 && data[h][w].second <= 3)
             {
+                // Item present - configure based on type
                 inspected_item.set_on_map(true);
                 inspected_item.set_cords(x_cord, y_cord);
-                inspected_item.set_texture("../item_textures/mushroom.png");
+                inspected_item.set_consumable(true);
+
+                int item_type = data[h][w].second;
+                ItemEffect item_effect;
+                std::string texture_path;
+
+                switch (item_type) {
+                    case 1:  // FOOD
+                        item_effect = ItemEffect(ItemType::FOOD, 50.0f, 0.0f, false);
+                        texture_path = "../item_textures/mushroom.png";
+                        break;
+                    case 2:  // SPEED_BOOST
+                        item_effect = ItemEffect(ItemType::SPEED_BOOST, 100.0f, 5.0f, false);
+                        texture_path = "../item_textures/mushroom.png";  // TODO: add speed_boost texture
+                        break;
+                    case 3:  // SHIELD
+                        item_effect = ItemEffect(ItemType::SHIELD, 1.0f, 10.0f, false);
+                        texture_path = "../item_textures/mushroom.png";  // TODO: add shield texture
+                        break;
+                    default:
+                        item_effect = ItemEffect(ItemType::FOOD, 50.0f, 0.0f, false);
+                        texture_path = "../item_textures/mushroom.png";
+                        break;
+                }
+
+                inspected_item.set_effect(item_effect);
+                inspected_item.set_texture(texture_path);
                 item_id++;
             }
             else if (data[h][w].second == 0)
@@ -319,6 +346,8 @@ void Map::set_entity_to_map(std::vector<std::vector<int>>& map_data, std::vector
 
 void Map::set_items_to_map(std::vector<std::vector<int>>& map_data, std::vector<std::vector<int>>& item_data, int height, int width, int probability)
 {
+    int food_count = 0, speed_count = 0, shield_count = 0;
+
     for (int i = 0; i < height; i++)
     {
         for (int j = 0; j < width; j++)
@@ -329,9 +358,38 @@ void Map::set_items_to_map(std::vector<std::vector<int>>& map_data, std::vector<
             }
             else if (*item_on_map < item_array_size && random_ptr->roll_custom_dice(probability) == 1)
             {
-                item_data[i][j] = 1;
+                // Weighted item type selection:
+                // 50% FOOD (type 1), 30% SPEED_BOOST (type 2), 20% SHIELD (type 3)
+                int roll = random_ptr->roll_custom_dice(10);  // 1-10
+
+                if (roll <= 5) {
+                    // 1-5: FOOD (type 1)
+                    item_data[i][j] = 1;
+                    food_count++;
+                } else if (roll <= 8) {
+                    // 6-8: SPEED_BOOST (type 2)
+                    item_data[i][j] = 2;
+                    speed_count++;
+                } else {
+                    // 9-10: SHIELD (type 3)
+                    item_data[i][j] = 3;
+                    shield_count++;
+                }
                 (*item_on_map)++;
             }
+        }
+    }
+
+    // Log item distribution for this map
+    if (food_count + speed_count + shield_count > 0) {
+        Logger::debug(Logger::MAP, "map #" + std::to_string(map_id)
+            + " item distribution: FOOD=" + std::to_string(food_count)
+            + " SPEED=" + std::to_string(speed_count)
+            + " SHIELD=" + std::to_string(shield_count));
+
+        if (shield_count > 0) {
+            Logger::info(Logger::ITEMS, "map #" + std::to_string(map_id)
+                + " spawned " + std::to_string(shield_count) + " rare SHIELD item(s)");
         }
     }
 }
