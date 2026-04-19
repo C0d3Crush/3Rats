@@ -8,6 +8,7 @@ add_executable(3Rats_tests
     test_item_effects.cpp
     test_enemy.cpp
     test_map.cpp
+    test_healthbar.cpp
 )
 
 target_include_directories(3Rats_tests PRIVATE
