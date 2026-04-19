@@ -299,6 +299,10 @@ Acteur::Acteur()
 	hungerTimer     = 0.0f;
 	nextHungerTick  = 3.0f;
 
+	// Initialize health bar (48px wide, 6px tall)
+	health_bar = HealthBar(48, 6);
+	health_bar.set_values(saturation, 100);
+
 	file_path = "../meta_textures/place_holder.png";
 	item_search_id = 0;
 	item_hold_id = 0;
@@ -508,7 +512,16 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 	}
 }
 
-void Acteur::Draw(SDL_Renderer* renderTarget) { SDL_RenderCopy(renderTarget, texture, &crop_rect, &position_rect); }
+void Acteur::Draw(SDL_Renderer* renderTarget)
+{
+	// Draw rat sprite
+	SDL_RenderCopy(renderTarget, texture, &crop_rect, &position_rect);
+
+	// Draw health bar above rat (8px above sprite)
+	health_bar.set_position(position_rect.x + (position_rect.w - 48) / 2, position_rect.y - 14);
+	health_bar.set_current(saturation);
+	health_bar.draw(renderTarget);
+}
 
 
 bool Acteur::intersectsWithBody(Body& b)

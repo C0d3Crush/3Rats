@@ -10,6 +10,7 @@
 //#include "Topography.h"
 #include "Door.h"
 #include "Controller.h"
+#include "HealthBar.h"
 
 struct ActiveEffect
 {
@@ -53,6 +54,8 @@ protected:
 	int   saturation;		// 0 - 100
 	float hungerTimer;
 	float nextHungerTick;	// randomised interval between decays
+
+	HealthBar health_bar;	// Visual HP bar above sprite
 
 // for update fuction
 	std::vector<std::vector<bool>> get_blocked_array(Tile* tile_array, int length);
