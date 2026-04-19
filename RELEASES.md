@@ -78,12 +78,34 @@ This document outlines the version numbering and release groupings for 3Rats dev
 ### v0.2.x - Complete Item System
 **Target**: Q1 Development
 
-#### v0.2.0 - Enemy Integration
-- Add drop_table vector to Enemy class
-- Implement Enemy HP system with hp and max_hp fields
-- Create Enemy on_death() method with item drop spawning
-- Expand Map item_type encoding beyond 0/1 values
-- Add item type variants to Garden room generation
+#### v0.2.0 - Enemy Integration ✅
+**Released**: [Current]
+- Add drop_table vector to Enemy class with weighted distribution
+- Implement Enemy HP system with hp/max_hp fields (default 50/50)
+- Create Enemy on_death() method with 1-2 item drops from drop_table
+- Expand Map item_type encoding from binary (0-1) to multi-type (0-3)
+- Add weighted item spawning: 50% FOOD, 30% SPEED_BOOST, 20% SHIELD
+- Comprehensive test coverage with 15 passing unit tests
+
+**Changes**:
+- `Enemy.h`: Added hp, max_hp, is_dead, drop_table, take_damage(), on_death(), is_alive(), get_hp(), get_max_hp()
+- `Enemy.cpp`: Implemented HP system with damage tracking, death mechanics, and item drop spawning (1-2 items)
+- `Enemy.cpp`: Default drop table: 70% FOOD, 30% SPEED_BOOST
+- `Enemy.cpp`: on_death() spawns items at enemy position with proper ItemEffect configuration
+- `Map.cpp:320-368`: Modified set_items_to_map() for weighted multi-type generation (types 1-3)
+- `Map.cpp:286-325`: Modified set_textures() to configure ItemEffect based on item type
+- `tests/test_enemy.cpp`: Added 6 comprehensive HP tests (damage, near-death, drop_table)
+- `tests/test_map.cpp`: Added 2 basic Map tests (constructor, ID setter)
+
+**Impact**:
+- Enemies can now be defeated (take_damage until hp=0)
+- Defeated enemies drop 1-2 random items from their drop_table
+- Maps spawn 3 different item types with distinct effects
+- FOOD: +50 saturation (passive instant)
+- SPEED_BOOST: +100% speed for 5 seconds (active duration)
+- SHIELD: Absorb 1 hit for 10 seconds (active duration)
+- All spawns and drops logged to logs/gameplay/items.log and logs/generation/map.log
+- Rare shield spawns highlighted in item log
 
 **Milestone**: Complete overhaul of item mechanics from pickup to usage
 
