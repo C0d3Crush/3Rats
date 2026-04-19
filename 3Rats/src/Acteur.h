@@ -11,6 +11,14 @@
 #include "Door.h"
 #include "Controller.h"
 
+struct ActiveEffect
+{
+	ItemEffect effect;
+	float timer;
+
+	ActiveEffect(ItemEffect e, float t) : effect(e), timer(t) {}
+};
+
 class Acteur : public Body, public Controller
 {
 protected:
@@ -22,7 +30,7 @@ protected:
 
 
 
-	// holding item type 
+	// holding item type
 	// should be done by the inventory not in the acteur!
 
 
@@ -32,6 +40,8 @@ protected:
 	bool wait;
 
 	int last_map_id;
+
+	std::vector<ActiveEffect> active_effects;
 
 
 
@@ -75,4 +85,7 @@ public:
 	void debug_give_item(Item* items, int count);
 	int  get_saturation() const { return saturation; }
 	void reduce_saturation(int amount);
+
+	void apply_effect(ItemEffect effect);
+	void process_effects(float delta);
 };

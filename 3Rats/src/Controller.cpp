@@ -150,16 +150,22 @@ void Controller::make_goal()
 
 void Controller::place_item()
 {
-	if (item_type == 0)
+	if (!holds_item || !inventory.has_item())
 	{
-
+		return;
 	}
-	else if (item_type == 1)
-	{
-		holds_item = false;
-		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number) + " placed item");
-		item_type = 0;
 
+	// Remove first item from inventory (placed on ground)
+	int item_id = inventory.remove_first_item();
+
+	if (item_id != -1)
+	{
+		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+			+ " placed item " + std::to_string(item_id));
+
+		// Update holds_item flag based on remaining inventory
+		holds_item = inventory.has_item();
+		item_type = holds_item ? 1 : 0;  // Legacy compatibility
 	}
 }
 

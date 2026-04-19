@@ -175,6 +175,42 @@ void Acteur::follow_front_rat(int rat_x, int rat_y, int front_rat_x, int front_r
 
 void Acteur::follow_goal(int rat_x, int rat_y, int goal_x, int goal_y, block_direction direction, float delta, Item& item)
 {
+	// Calculate distance to item
+	float distance = sqrt(pow(rat_x - goal_x, 2) + pow(rat_y - goal_y, 2));
+
+	// Check if within pickup radius
+	if (distance <= Inventory::PICKUP_RADIUS && !item.get_pick_up())
+	{
+		// Attempt to add item to inventory
+		if (inventory.add_item(item_search_id))
+		{
+			Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+				+ " picked up item " + std::to_string(item_search_id)
+				+ " (distance: " + std::to_string(static_cast<int>(distance)) + "px)");
+
+			holds_item = true;
+			item.set_pick_up(true);
+			has_goal = false;
+			item_type = 1;  // Legacy compatibility
+		}
+		else
+		{
+			Logger::warn(Logger::ITEMS, "rat " + std::to_string(controller_number)
+				+ " reached item " + std::to_string(item_search_id)
+				+ " but inventory is full");
+			has_goal = false;
+		}
+		return;
+	}
+	else if (distance <= Inventory::PICKUP_RADIUS && item.get_pick_up())
+	{
+		Logger::warn(Logger::ITEMS, "rat " + std::to_string(controller_number)
+			+ " reached item " + std::to_string(item_search_id) + " but it was already taken");
+		has_goal = false;
+		return;
+	}
+
+	// Move toward item
 	if (rat_y > goal_y && !direction.up)
 	{
 		position_rect.y -= moveSpeed * delta;
@@ -199,30 +235,11 @@ void Acteur::follow_goal(int rat_x, int rat_y, int goal_x, int goal_y, block_dir
 		crop_rect.y = frame_height * 2;
 		current_direction = 3;
 	}
-	else if (rat_x == goal_x && rat_y == goal_y && !item.get_pick_up())
-	{
-		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
-		    + " picked up item " + std::to_string(item_search_id));
-
-		item_hold_id = item_search_id;
-		holds_item = true;
-		item.set_pick_up(true);
-		has_goal = false;
-
-		item_type = 1;
-
-	}
-	else if (rat_x == goal_x && rat_y == goal_y && item.get_pick_up())
-	{
-		Logger::warn(Logger::ITEMS, "rat " + std::to_string(controller_number)
-		    + " reached item " + std::to_string(item_search_id) + " but it was already taken");
-		has_goal = false;
-	}
 }
 
 void Acteur::hold_item_in_mouth(Item& item)
 {
-	// add he offsets to make more sense. just for example i did it fo 14
+	// Position the first item in the inventory at the rat's mouth
 	int offset = 14;
 
 	if (current_direction == 0)
@@ -356,6 +373,9 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 		if (saturation > 0) saturation--;
 	}
 
+	// process active effects
+	process_effects(delta);
+
 	if (is_item_available_on_map())
 	{
 		make_goal();	// make it so: goal = make_goal();
@@ -443,9 +463,13 @@ void Acteur::Update(float delta, const Uint8* keyState, int mode, Acteur& front_
 	moveSpeed = saved_speed;
 
 	// make item visible on a acteur
-	if (holds_item)
+	if (holds_item && inventory.has_item())
 	{
-		hold_item_in_mouth(item_array[item_hold_id]);
+		int item_id = inventory.get_first_item();
+		if (item_id >= 0 && item_id < item_array_size)
+		{
+			hold_item_in_mouth(item_array[item_id]);
+		}
 	}
 
 	// make movement in texture for acteur
@@ -499,19 +523,33 @@ bool Acteur::intersectsWithBody(Body& b)
 
 void Acteur::debug_give_item(Item* items, int count)
 {
-    if (holds_item) return;
-    for (int i = 0; i < count; i++)
-    {
-        if (!items[i].get_pick_up())
-        {
-            items[i].set_pick_up(true);
-            items[i].set_on_map(true);
-            item_hold_id = i;
-            holds_item   = true;
-            item_type    = 1;
-            return;
-        }
-    }
+	if (inventory.is_full())
+	{
+		Logger::warn(Logger::ITEMS, "debug_give_item: rat " + std::to_string(controller_number)
+			+ " inventory is full");
+		return;
+	}
+
+	for (int i = 0; i < count; i++)
+	{
+		if (!items[i].get_pick_up())
+		{
+			if (inventory.add_item(i))
+			{
+				items[i].set_pick_up(true);
+				items[i].set_on_map(true);
+				holds_item = true;
+				item_type = 1;  // Legacy compatibility
+
+				Logger::info(Logger::ITEMS, "debug_give_item: gave item " + std::to_string(i)
+					+ " to rat " + std::to_string(controller_number));
+				return;
+			}
+		}
+	}
+
+	Logger::warn(Logger::ITEMS, "debug_give_item: no available items to give to rat "
+		+ std::to_string(controller_number));
 }
 
 void Acteur::reduce_saturation(int amount)
@@ -520,23 +558,126 @@ void Acteur::reduce_saturation(int amount)
 	if (saturation < 0) saturation = 0;
 }
 
+void Acteur::apply_effect(ItemEffect effect)
+{
+	// Passive effects (instant application)
+	if (effect.is_passive || effect.duration == 0.0f)
+	{
+		switch (effect.type)
+		{
+			case ItemType::FOOD:
+				saturation += static_cast<int>(effect.value);
+				if (saturation > 100) saturation = 100;
+				Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+					+ " ate food — saturation +" + std::to_string(static_cast<int>(effect.value))
+					+ " (now " + std::to_string(saturation) + ")");
+				break;
+
+			case ItemType::DAMAGE_ORB:
+				// Instant damage (passive damage effect)
+				Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+					+ " used damage orb (instant)");
+				break;
+
+			default:
+				break;
+		}
+	}
+	// Active effects (duration-based)
+	else
+	{
+		active_effects.push_back(ActiveEffect(effect, effect.duration));
+
+		switch (effect.type)
+		{
+			case ItemType::SPEED_BOOST:
+				Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+					+ " gained speed boost +" + std::to_string(effect.value)
+					+ " for " + std::to_string(effect.duration) + "s");
+				break;
+
+			case ItemType::SHIELD:
+				Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+					+ " gained shield for " + std::to_string(effect.duration) + "s");
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
+void Acteur::process_effects(float delta)
+{
+	// Process active effects
+	for (auto it = active_effects.begin(); it != active_effects.end();)
+	{
+		it->timer -= delta;
+
+		if (it->timer <= 0.0f)
+		{
+			// Effect expired
+			switch (it->effect.type)
+			{
+				case ItemType::SPEED_BOOST:
+					Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+						+ " speed boost expired");
+					break;
+
+				case ItemType::SHIELD:
+					Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
+						+ " shield expired");
+					break;
+
+				default:
+					break;
+			}
+
+			it = active_effects.erase(it);
+		}
+		else
+		{
+			++it;
+		}
+	}
+}
+
 void Acteur::use_item()
 {
-	if (item_type == 0)
+	if (!holds_item || !inventory.has_item())
 	{
-
+		return;
 	}
-	else if (item_type == 1)
+
+	// Get first item from inventory
+	int item_id = inventory.get_first_item();
+	if (item_id < 0 || item_id >= item_array_size)
 	{
-		saturation = 100;
+		Logger::warn(Logger::ITEMS, "rat " + std::to_string(controller_number)
+			+ " attempted to use invalid item ID " + std::to_string(item_id));
+		return;
+	}
 
-		holds_item = false;
-		item_array[item_hold_id].set_cords(-100, -100);
-		item_array[item_hold_id].set_on_map(false);
+	// Get the item's effect
+	ItemEffect effect = item_array[item_id].get_effect();
 
-		Logger::info(Logger::ITEMS, "rat " + std::to_string(controller_number)
-		    + " ate item — saturation restored to 100");
-		item_type = 0;
+	// Apply the effect
+	apply_effect(effect);
 
+	// Remove the item if consumable
+	if (item_array[item_id].get_consumable())
+	{
+		// Remove from inventory
+		inventory.remove_first_item();
+
+		// Update holds_item flag
+		holds_item = inventory.has_item();
+
+		// Move item off-screen and mark as not on map
+		item_array[item_id].set_cords(-100, -100);
+		item_array[item_id].set_on_map(false);
+
+		// Legacy compatibility
+		item_type = holds_item ? 1 : 0;
 	}
 }

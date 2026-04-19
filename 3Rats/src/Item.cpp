@@ -4,6 +4,8 @@ Item::Item()
 {
 	is_on_map = false;
 	is_picked_up = false;
+	is_consumable = true;  // default to consumable
+	effect = ItemEffect(ItemType::FOOD, 0.0f, 0.0f, false);  // default food effect
 }
 
 Item::~Item()
@@ -32,4 +34,23 @@ bool Item::get_pick_up()
 	return is_picked_up;
 }
 
+bool Item::get_consumable()
+{
+	return is_consumable;
+}
+
+void Item::set_consumable(bool value)
+{
+	is_consumable = value;
+}
+
+ItemEffect Item::get_effect()
+{
+	return effect;
+}
+
+void Item::set_effect(ItemEffect new_effect)
+{
+	effect = new_effect;
+}
 

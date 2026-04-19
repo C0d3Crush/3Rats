@@ -5,6 +5,7 @@
 
 #include "Topography.h"
 #include "Random.h"
+#include "Inventory.h"
 
 class Controller {
 protected:
@@ -51,9 +52,11 @@ protected:
 	int current_direction;
 	bool has_goal;
 	int item_search_id;
-	int item_type;
+	int item_type;  // DEPRECATED: use inventory instead
 	bool holds_item;
 	bool wants_enter_door;
+
+	Inventory inventory;
 
 
 
