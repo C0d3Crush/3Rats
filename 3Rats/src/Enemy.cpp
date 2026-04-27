@@ -7,13 +7,17 @@
 Enemy::Enemy()
     : topography(nullptr), home_map_id(-1),
       move_speed(110.0f), pos_x(0.0f), pos_y(0.0f), damage_timer(0.0f),
-      hp(50), max_hp(50), is_dead(false)
+      hp(50), max_hp(50), is_dead(false),
+      health_bar(48, 6), damage_display_timer(0.0f), damage_manager(nullptr)
 {
 	// Default drop table: 70% FOOD, 30% SPEED_BOOST
 	drop_table.push_back(ItemType::FOOD);
 	drop_table.push_back(ItemType::FOOD);
 	drop_table.push_back(ItemType::FOOD);
 	drop_table.push_back(ItemType::SPEED_BOOST);
+	
+	// Initialize health bar
+	health_bar.set_values(hp, max_hp);
 }
 
 void Enemy::set_topography(Topography* t) { topography = t; }
@@ -45,12 +49,28 @@ void Enemy::set_drop_table(std::vector<ItemType> drops)
 		+ std::to_string(drops.size()) + " item types");
 }
 
+void Enemy::set_damage_manager(DamageNumberManager* manager)
+{
+	damage_manager = manager;
+}
+
 void Enemy::take_damage(int amount)
 {
 	if (is_dead) return;
 
 	hp -= amount;
 	if (hp < 0) hp = 0;
+	
+	// Update health bar and trigger display timer
+	health_bar.set_current(hp);
+	damage_display_timer = DAMAGE_DISPLAY_DURATION;
+	
+	// Add damage number if manager is available
+	if (damage_manager) {
+		float damage_x = (float)(position_rect.x + position_rect.w / 2);
+		float damage_y = (float)(position_rect.y);
+		damage_manager->add_damage_number(amount, damage_x, damage_y);
+	}
 
 	Logger::info(Logger::ACTEUR, "enemy took " + std::to_string(amount)
 		+ " damage — HP now " + std::to_string(hp) + "/" + std::to_string(max_hp)
@@ -165,6 +185,14 @@ void Enemy::update(float delta, Acteur* rats, int rat_count)
     // Restore float position after possible off-screen frame
     position_rect.x = (int)pos_x;
     position_rect.y = (int)pos_y;
+    
+    // Update damage display timer
+    if (damage_display_timer > 0.0f) {
+        damage_display_timer -= delta;
+        if (damage_display_timer < 0.0f) {
+            damage_display_timer = 0.0f;
+        }
+    }
 
     Tile* tiles      = topography->get_tile_array();
     int   tile_count = topography->get_tile_size();
@@ -205,9 +233,34 @@ void Enemy::update(float delta, Acteur* rats, int rat_count)
             float ddy = (float)(rats[i].get_origin_y() - my_y);
             if (std::sqrt(ddx*ddx + ddy*ddy) < CONTACT_RADIUS) {
                 rats[i].reduce_saturation(DAMAGE_AMOUNT);
+                
+                // Add damage number for rat if manager is available
+                if (damage_manager) {
+                    float damage_x = (float)(rats[i].get_origin_x());
+                    float damage_y = (float)(rats[i].get_origin_y());
+                    SDL_Color rat_damage_color = {255, 200, 200, 255}; // Light red for rat damage
+                    damage_manager->add_damage_number(DAMAGE_AMOUNT, damage_x, damage_y, rat_damage_color);
+                }
+                
                 Logger::info(Logger::ACTEUR, "enemy hit rat " + std::to_string(i)
                     + " — saturation now " + std::to_string(rats[i].get_saturation()));
             }
         }
+    }
+}
+
+void Enemy::draw_health_bar(SDL_Renderer* renderer)
+{
+    if (!topography) return;
+    if (is_dead) return;
+    
+    // Only show health bar if recently damaged or not at full health
+    if (damage_display_timer > 0.0f || hp < max_hp) {
+        // Position health bar above enemy (offset by enemy height + 10px)
+        int bar_x = position_rect.x + (position_rect.w - 48) / 2;
+        int bar_y = position_rect.y - 16;
+        
+        health_bar.set_position(bar_x, bar_y);
+        health_bar.draw(renderer);
     }
 }
