@@ -20,6 +20,11 @@
 #include "Metrics.h"
 #include "Logger.h"
 #include "Enemy.h"
+#include "WaveManager.h"
+#include "DamageNumberManager.h"
+#include "WaveNotification.h"
+
+static constexpr int MAX_ENEMIES = 50;
 
 int world_seed_generation(bool value)
 {
@@ -397,21 +402,30 @@ int main(int argc, char* argv[])
 	Acteur entity[entity_amount];
 	init_entity(renderTarget, entity, entity_amount, topography, random);
 
-	// Find a random garden room (type 1) for the enemy spawn
-	std::vector<int> garden_rooms;
-	for (int i = 1; i < map_amount; i++) {
-		if (map_array[i].get_type() == 1)
-			garden_rooms.push_back(i);
+	// Initialize enemy array
+	Enemy enemy_array[MAX_ENEMIES];
+	for (int i = 0; i < MAX_ENEMIES; i++) {
+		enemy_array[i].set_surface(renderTarget);
+		enemy_array[i].set_texture("../npc_textures/entity.png");
+		enemy_array[i].set_topography(&topography);
 	}
-	int enemy_map_id = garden_rooms.empty() ? 1
-	    : garden_rooms[random.roll_custom_dice((int)garden_rooms.size()) - 1];
 
-	Enemy enemy;
-	enemy.set_surface(renderTarget);
-	enemy.set_texture("../npc_textures/entity.png");
-	enemy.set_cords(4 * 64, 2 * 64);
-	enemy.set_topography(&topography);
-	enemy.set_home_map(enemy_map_id);
+	// Initialize wave manager
+	WaveManager wave_manager;
+
+	// Initialize wave notification system
+	WaveNotification wave_notification;
+	wave_notification.set_surface(renderTarget);
+	wave_manager.set_notification_system(&wave_notification);
+
+	// Initialize damage number manager
+	DamageNumberManager damage_manager;
+	damage_manager.init_font("../fonts/sans.ttf", 16);
+	
+	// Set damage manager for all enemies
+	for (int i = 0; i < MAX_ENEMIES; i++) {
+		enemy_array[i].set_damage_manager(&damage_manager);
+	}
 
 	Metrics metrics;
 	metrics.init(renderTarget, player_array, player_amount, &topography);
@@ -422,7 +436,9 @@ int main(int argc, char* argv[])
 	             map_array,    map_amount,
 	             &topography,
 	             item_array,   item_amount,
-	             tile_array,   tile_amount);
+	             tile_array,   tile_amount,
+	             &wave_manager,
+	             enemy_array, MAX_ENEMIES);
 
 	// ===================================================================================
 
@@ -526,7 +542,18 @@ int main(int argc, char* argv[])
 		}
 
 		entity[0].update(delta);
-		enemy.update(delta, player_array, player_amount);
+		
+		// Update wave manager and enemies
+		wave_manager.update(delta, enemy_array, MAX_ENEMIES, map_array, map_amount);
+		for (int i = 0; i < MAX_ENEMIES; i++) {
+			if (enemy_array[i].get_is_active()) {
+				enemy_array[i].update(delta, player_array, player_amount);
+			}
+		}
+		
+		// Update damage numbers and wave notifications
+		damage_manager.update(delta);
+		wave_notification.update_notification(delta);
 		std::string pause_message = "Pause.";
 		pause.update(pause_message);
 		clock.update(delta);
@@ -549,11 +576,20 @@ int main(int argc, char* argv[])
 			player_array[i].Draw(renderTarget);
 		}
 		entity[0].draw(renderTarget);
-		enemy.draw(renderTarget);
+		
+		// Draw all active enemies and their health bars
+		for (int i = 0; i < MAX_ENEMIES; i++) {
+			if (enemy_array[i].get_is_active()) {
+				enemy_array[i].draw(renderTarget);
+				enemy_array[i].draw_health_bar(renderTarget);
+			}
+		}
 		clock.draw(renderTarget);
 		fade.draw(renderTarget);
 		pause.draw(renderTarget);
 		overlay.draw(renderTarget);
+		damage_manager.draw(renderTarget);
+		wave_notification.draw_notification(renderTarget);
 		metrics.draw();
 		console.draw();
 

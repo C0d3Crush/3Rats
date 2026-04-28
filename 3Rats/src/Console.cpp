@@ -1,4 +1,6 @@
 #include "Console.h"
+#include "WaveManager.h"
+#include "Enemy.h"
 #include <sstream>
 #include <iostream>
 
@@ -13,7 +15,8 @@ Console::Console()
       map_array(nullptr),   map_amount(0),
       topography(nullptr),
       item_array(nullptr),  item_amount(0),
-      tile_array(nullptr),  tile_amount(0)
+      tile_array(nullptr),  tile_amount(0),
+      wave_manager(nullptr), enemy_array(nullptr), max_enemies(0)
 {}
 
 Console::~Console()
@@ -26,7 +29,9 @@ void Console::init(SDL_Renderer* rend,
                    Map*    maps,    int m_amount,
                    Topography* topo,
                    Item*   items,   int i_amount,
-                   Tile*   tiles,   int t_amount)
+                   Tile*   tiles,   int t_amount,
+                   WaveManager* wave_mgr,
+                   Enemy*  enemies, int max_enemy_count)
 {
     renderer     = rend;
     player_array = players;  player_amount = p_amount;
@@ -34,6 +39,8 @@ void Console::init(SDL_Renderer* rend,
     topography   = topo;
     item_array   = items;    item_amount   = i_amount;
     tile_array   = tiles;    tile_amount   = t_amount;
+    wave_manager = wave_mgr;
+    enemy_array  = enemies;  max_enemies   = max_enemy_count;
 
     font = TTF_OpenFont("../fonts/sans.ttf", 13);
     if (!font) std::cerr << "Console: failed to open font: " << TTF_GetError() << std::endl;
@@ -99,6 +106,8 @@ void Console::execute(const std::string& cmd)
         log("speed <val>     set rat 0 move speed");
         log("pos             print rat 0 position");
         log("regen <0|1|2>   regen current map (0=maze 1=garden 2=cage)");
+        log("wave spawn      force next wave");
+        log("wave info       show current wave status");
     }
     // ---- tp ----
     else if (token == "tp")
@@ -164,6 +173,45 @@ void Console::execute(const std::string& cmd)
             log("regenerated map " + std::to_string(id) + " type " + std::to_string(type));
         }
         else log("usage: regen <0|1|2>");
+    }
+    // ---- wave ----
+    else if (token == "wave")
+    {
+        std::string subcommand;
+        if (ss >> subcommand)
+        {
+            if (subcommand == "spawn")
+            {
+                if (wave_manager && enemy_array)
+                {
+                    wave_manager->force_next_wave(enemy_array, max_enemies, map_array, map_amount);
+                    log("forced next wave: " + wave_manager->get_wave_info());
+                }
+                else
+                {
+                    log("wave manager not initialized");
+                }
+            }
+            else if (subcommand == "info")
+            {
+                if (wave_manager)
+                {
+                    log(wave_manager->get_wave_info());
+                }
+                else
+                {
+                    log("wave manager not initialized");
+                }
+            }
+            else
+            {
+                log("usage: wave <spawn|info>");
+            }
+        }
+        else
+        {
+            log("usage: wave <spawn|info>");
+        }
     }
     else
     {

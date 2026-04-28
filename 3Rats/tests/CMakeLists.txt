@@ -9,6 +9,7 @@ add_executable(3Rats_tests
     test_enemy.cpp
     test_map.cpp
     test_healthbar.cpp
+    test_wavemanager.cpp
 )
 
 target_include_directories(3Rats_tests PRIVATE

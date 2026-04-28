@@ -7,7 +7,7 @@
 Enemy::Enemy()
     : topography(nullptr), home_map_id(-1),
       move_speed(110.0f), pos_x(0.0f), pos_y(0.0f), damage_timer(0.0f),
-      hp(50), max_hp(50), is_dead(false),
+      hp(50), max_hp(50), is_dead(false), is_active(false),
       health_bar(48, 6), damage_display_timer(0.0f), damage_manager(nullptr)
 {
 	// Default drop table: 70% FOOD, 30% SPEED_BOOST
@@ -87,6 +87,7 @@ void Enemy::on_death(Item* item_array, int item_count)
 	if (is_dead) return;  // Prevent multiple death triggers
 
 	is_dead = true;
+	deactivate();
 
 	Logger::info(Logger::SYS, "enemy died on map #" + std::to_string(home_map_id)
 		+ " at position (" + std::to_string(position_rect.x)
@@ -176,6 +177,7 @@ void Enemy::update(float delta, Acteur* rats, int rat_count)
 {
     if (!topography) return;
     if (is_dead) return;  // Skip update if dead
+    if (!is_active) return;  // Skip update if inactive
 
     if (topography->get_current_map_id() != home_map_id) {
         position_rect.x = -1000;
@@ -253,6 +255,7 @@ void Enemy::draw_health_bar(SDL_Renderer* renderer)
 {
     if (!topography) return;
     if (is_dead) return;
+    if (!is_active) return;
     
     // Only show health bar if recently damaged or not at full health
     if (damage_display_timer > 0.0f || hp < max_hp) {
@@ -263,4 +266,38 @@ void Enemy::draw_health_bar(SDL_Renderer* renderer)
         health_bar.set_position(bar_x, bar_y);
         health_bar.draw(renderer);
     }
+}
+
+void Enemy::activate()
+{
+    is_active = true;
+    is_dead = false;
+    hp = max_hp;
+    health_bar.set_values(hp, max_hp);
+    damage_timer = 0.0f;
+    damage_display_timer = 0.0f;
+    Logger::info(Logger::SYS, "enemy activated on map #" + std::to_string(home_map_id));
+}
+
+void Enemy::deactivate()
+{
+    is_active = false;
+    is_dead = false;
+    hp = max_hp;
+    home_map_id = -1;
+    
+    // Move enemy far off-screen to clear slot
+    position_rect.x = -10000;
+    position_rect.y = -10000;
+    pos_x = -10000.0f;
+    pos_y = -10000.0f;
+    
+    // Reset timers
+    damage_timer = 0.0f;
+    damage_display_timer = 0.0f;
+    
+    // Reset health bar
+    health_bar.set_values(hp, max_hp);
+    
+    Logger::info(Logger::SYS, "enemy slot recycled - ready for reuse");
 }

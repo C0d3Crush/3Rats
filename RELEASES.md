@@ -121,9 +121,58 @@ This document outlines the version numbering and release groupings for 3Rats dev
 - Implement GameSettings struct and pause menu settings
 - Complete Sound class with volume and music controls
 
-#### v0.3.1 - Multi-Enemy System
-- Implement enemy array system with MAX_ENEMIES
-- Add wave system and spawn timers with WaveManager
+#### v0.3.1 - Multi-Enemy System ✅
+**Released**: [Current]
+- Implement enemy array system with MAX_ENEMIES constant (5 maximum)
+- Add WaveManager class for spawn timers and wave progression
+- Update Enemy class with is_active flag and activate/deactivate methods
+- Integrate multi-enemy system into main game loop with array-based updates
+- Add comprehensive test coverage for WaveManager and multi-enemy functionality
+
+**Changes**:
+- `Enemy.h/.cpp`: Added is_active flag and activate/deactivate methods for array management
+- `Enemy.cpp`: Updated update/draw methods to skip inactive enemies
+- `WaveManager.h/.cpp`: New class managing enemy spawning with 15s intervals and wave progression
+- `main.cpp`: Replaced single enemy with MAX_ENEMIES=5 array, integrated WaveManager
+- `main.cpp`: Added DamageNumberManager integration for multi-enemy damage tracking
+- `tests/test_wavemanager.cpp`: Added test coverage for WaveManager and Enemy activation
+
+**Impact**:
+- Up to 5 enemies can now be active simultaneously
+- Wave progression: Wave 1 (1 enemy), Wave 2 (2 enemies), Wave 3+ (3 enemies)
+- Enemies spawn every 15 seconds with 45-second wave intervals
+- All enemies share the same damage system and health bar visibility
+- Multiple enemies can chase different rats providing increased challenge
+- Foundation ready for advanced enemy AI and different enemy types
+
+#### v0.3.2 - Wave Commands & Visual Notifications ✅
+**Released**: [Current]
+- Add Console commands for manual wave control (wave spawn, wave info)
+- Implement WaveNotification class with centered visual feedback
+- Integrate wave progression notifications with 3-second auto-hide
+- Connect WaveManager with Console and notification systems
+- Add comprehensive DamageNumberManager integration for all enemies
+
+**Changes**:
+- `WaveManager.h/.cpp`: Added force_next_wave() and get_wave_info() methods for Console control
+- `WaveManager.h/.cpp`: Added notification_system integration with callbacks
+- `WaveNotification.h/.cpp`: New class for centered wave announcements with fade effects
+- `Console.h/.cpp`: Added WaveManager pointer and wave spawn/info commands
+- `Console.cpp`: Updated help command with wave commands documentation
+- `main.cpp`: Integrated WaveNotification system with update/draw calls
+- `DamageNumberManager.cpp`: Fixed missing algorithm include for std::remove_if
+
+**Impact**:
+- Players can manually trigger waves using `wave spawn` console command
+- Visual "WAVE X BEGINS!" notifications appear centered on screen
+- Wave status information available via `wave info` console command  
+- Enhanced player control over enemy encounter pacing
+- Improved visual feedback for wave progression events
+- Foundation ready for advanced wave mechanics and enemy variety
+
+**Console Commands Added**:
+- `wave spawn` - Force immediate progression to next wave
+- `wave info` - Display current wave number and enemy spawn status
 
 **Milestone**: Rich visual feedback and multiple enemy encounters
 

@@ -6,6 +6,7 @@ void test_item_effects();
 void test_enemy();
 void test_map();
 void test_healthbar();
+void test_wavemanager();
 
 int main() {
     std::cout << "Running 3Rats Test Suite\n" << std::endl;
@@ -15,6 +16,7 @@ int main() {
     test_enemy();
     test_map();
     test_healthbar();
+    test_wavemanager();
 
     TestFramework::print_summary();
     return TestFramework::get_exit_code();

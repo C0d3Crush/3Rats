@@ -1,5 +1,6 @@
 #include "DamageNumberManager.h"
 #include "Logger.h"
+#include <algorithm>
 
 DamageNumberManager::DamageNumberManager() : font(nullptr)
 {

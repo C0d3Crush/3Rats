@@ -20,6 +20,7 @@ class Enemy : public Body {
     int hp;
     int max_hp;
     bool is_dead;
+    bool is_active;
 
     // Drop system
     std::vector<ItemType> drop_table;
@@ -53,4 +54,9 @@ public:
     bool is_alive() const { return !is_dead; }
     int get_hp() const { return hp; }
     int get_max_hp() const { return max_hp; }
+
+    // Multi-enemy management
+    void activate();
+    void deactivate();
+    bool get_is_active() const { return is_active; }
 };

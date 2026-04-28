@@ -11,6 +11,9 @@
 #include "Item.h"
 #include "Tile.h"
 
+class WaveManager;
+class Enemy;
+
 class Console
 {
 private:
@@ -30,6 +33,9 @@ private:
     int        item_amount;
     Tile*      tile_array;
     int        tile_amount;
+    WaveManager* wave_manager;
+    Enemy*     enemy_array;
+    int        max_enemies;
 
     void execute(const std::string& cmd);
     void log(const std::string& msg);
@@ -45,7 +51,9 @@ public:
               Map* maps,       int m_amount,
               Topography* topo,
               Item* items,     int i_amount,
-              Tile* tiles,     int t_amount);
+              Tile* tiles,     int t_amount,
+              WaveManager* wave_mgr,
+              Enemy* enemies,  int max_enemy_count);
 
     void handle_event(const SDL_Event& e);
     void draw();
