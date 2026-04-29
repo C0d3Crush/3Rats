@@ -23,6 +23,8 @@
 #include "WaveManager.h"
 #include "DamageNumberManager.h"
 #include "WaveNotification.h"
+#include "TimeManager.h"
+#include "TimeDisplay.h"
 
 static constexpr int MAX_ENEMIES = 50;
 
@@ -427,6 +429,14 @@ int main(int argc, char* argv[])
 		enemy_array[i].set_damage_manager(&damage_manager);
 	}
 
+	// Initialize time management system
+	TimeManager time_manager;
+	time_manager.set_notification_system(&wave_notification);
+	
+	// Initialize time display UI
+	TimeDisplay time_display;
+	time_display.init(renderTarget, &time_manager);
+
 	Metrics metrics;
 	metrics.init(renderTarget, player_array, player_amount, &topography);
 
@@ -535,6 +545,17 @@ int main(int argc, char* argv[])
 		metrics.update();
 		//topography.update(delta);
 
+		// Update time management system and check cage safety
+		time_manager.update(delta);
+		
+		// Check if all rats are in cage room (map_type == 2 is cage)
+		int current_map_id = topography.get_current_map_id();
+		bool all_rats_in_cage = map_array[current_map_id].get_type() == 2;
+		time_manager.set_rats_in_cage(all_rats_in_cage);
+		
+		// Update time display
+		time_display.update();
+
 		player_array[0].Update(delta, keyState, mode, player_array[2]);
 		for (int i = 1; i < player_amount; i++)
 		{
@@ -590,6 +611,7 @@ int main(int argc, char* argv[])
 		overlay.draw(renderTarget);
 		damage_manager.draw(renderTarget);
 		wave_notification.draw_notification(renderTarget);
+		time_display.draw(renderTarget);
 		metrics.draw();
 		console.draw();
 
