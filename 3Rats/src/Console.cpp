@@ -590,9 +590,39 @@ void Console::cmd_time(const std::vector<std::string>& args)
             log("time manager not initialized");
         }
     } else if (subcommand == "speed") {
-        log("time speed control not yet implemented");
+        if (args.size() < 3) {
+            if (time_manager) {
+                log("Current time speed: " + std::to_string(time_manager->get_time_scale()) + "x");
+                log("Frozen: " + std::string(time_manager->is_time_frozen() ? "yes" : "no"));
+            }
+            log("usage: time speed <multiplier>");
+            log("multiplier: 0.1-10.0 (1.0 = normal speed)");
+            return;
+        }
+        
+        try {
+            float speed = std::stof(args[2]);
+            if (time_manager) {
+                time_manager->set_time_scale(speed);
+                log("time speed set to " + std::to_string(speed) + "x");
+            } else {
+                log("time manager not initialized");
+            }
+        } catch (const std::exception& e) {
+            log("invalid speed value: " + std::string(e.what()));
+        }
     } else if (subcommand == "freeze") {
-        log("time freeze control not yet implemented");
+        if (time_manager) {
+            if (time_manager->is_time_frozen()) {
+                time_manager->unfreeze_time();
+                log("time unfrozen - resuming at " + std::to_string(time_manager->get_time_scale()) + "x speed");
+            } else {
+                time_manager->freeze_time();
+                log("time frozen at " + time_manager->get_time_string());
+            }
+        } else {
+            log("time manager not initialized");
+        }
     } else {
         log("usage: time <set|info|phase|advance|speed|freeze>");
     }

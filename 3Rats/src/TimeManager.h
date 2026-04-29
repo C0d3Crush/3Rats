@@ -35,6 +35,10 @@ private:
     float warning_timer;
     float evaluation_timer;
     
+    // Time control
+    float time_scale;
+    bool time_frozen;
+    
     // Time configuration (in game minutes)
     static constexpr int DAY_START_HOUR = 16;
     static constexpr int DAY_START_MINUTE = 30;
@@ -92,4 +96,11 @@ public:
     // Console commands
     void force_phase(TimePhase phase);
     void force_game_over() { trigger_game_over(); }
+    
+    // Time control
+    void set_time_scale(float scale);
+    float get_time_scale() const { return time_scale; }
+    void freeze_time() { time_frozen = true; }
+    void unfreeze_time() { time_frozen = false; }
+    bool is_time_frozen() const { return time_frozen; }
 };

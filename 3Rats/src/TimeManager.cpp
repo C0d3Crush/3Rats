@@ -8,7 +8,8 @@ TimeManager::TimeManager()
     : spacetime(0.0), minutes(DAY_START_MINUTE), hours(DAY_START_HOUR),
       day_number(1), current_phase(TimePhase::DAY), game_state(GameState::ACTIVE),
       rats_in_cage(false), warning_shown(false), warning_timer(0.0f),
-      evaluation_timer(0.0f), notification_system(nullptr)
+      evaluation_timer(0.0f), notification_system(nullptr),
+      time_scale(1.0f), time_frozen(false)
 {
     update_phase();
     Logger::info(Logger::SYS, "TimeManager initialized - Day 1 starting at " + get_time_string());
@@ -16,9 +17,9 @@ TimeManager::TimeManager()
 
 void TimeManager::update(double delta)
 {
-    // Only advance time during active gameplay
-    if (game_state == GameState::ACTIVE) {
-        spacetime += delta;
+    // Only advance time during active gameplay and when not frozen
+    if (game_state == GameState::ACTIVE && !time_frozen) {
+        spacetime += delta * time_scale;
         
         // Advance time every SECONDS_PER_GAME_MINUTE
         if (spacetime >= SECONDS_PER_GAME_MINUTE) {
@@ -238,4 +239,13 @@ void TimeManager::force_phase(TimePhase phase)
 void TimeManager::set_notification_system(WaveNotification* notifications)
 {
     notification_system = notifications;
+}
+
+void TimeManager::set_time_scale(float scale)
+{
+    if (scale < 0.0f) scale = 0.0f;
+    if (scale > 10.0f) scale = 10.0f;  // Reasonable maximum
+    
+    time_scale = scale;
+    Logger::info(Logger::SYS, "Time scale set to " + std::to_string(time_scale));
 }
