@@ -13,6 +13,7 @@
 
 class WaveManager;
 class Enemy;
+class TimeManager;
 
 class Console
 {
@@ -36,6 +37,7 @@ private:
     WaveManager* wave_manager;
     Enemy*     enemy_array;
     int        max_enemies;
+    TimeManager* time_manager;
 
     void execute(const std::string& cmd);
     void log(const std::string& msg);
@@ -53,7 +55,8 @@ public:
               Item* items,     int i_amount,
               Tile* tiles,     int t_amount,
               WaveManager* wave_mgr,
-              Enemy* enemies,  int max_enemy_count);
+              Enemy* enemies,  int max_enemy_count,
+              TimeManager* time_mgr);
 
     void handle_event(const SDL_Event& e);
     void draw();

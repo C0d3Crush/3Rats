@@ -1,6 +1,7 @@
 #include "Console.h"
 #include "WaveManager.h"
 #include "Enemy.h"
+#include "TimeManager.h"
 #include <sstream>
 #include <iostream>
 
@@ -16,7 +17,7 @@ Console::Console()
       topography(nullptr),
       item_array(nullptr),  item_amount(0),
       tile_array(nullptr),  tile_amount(0),
-      wave_manager(nullptr), enemy_array(nullptr), max_enemies(0)
+      wave_manager(nullptr), enemy_array(nullptr), max_enemies(0), time_manager(nullptr)
 {}
 
 Console::~Console()
@@ -31,7 +32,8 @@ void Console::init(SDL_Renderer* rend,
                    Item*   items,   int i_amount,
                    Tile*   tiles,   int t_amount,
                    WaveManager* wave_mgr,
-                   Enemy*  enemies, int max_enemy_count)
+                   Enemy*  enemies, int max_enemy_count,
+                   TimeManager* time_mgr)
 {
     renderer     = rend;
     player_array = players;  player_amount = p_amount;
@@ -41,6 +43,7 @@ void Console::init(SDL_Renderer* rend,
     tile_array   = tiles;    tile_amount   = t_amount;
     wave_manager = wave_mgr;
     enemy_array  = enemies;  max_enemies   = max_enemy_count;
+    time_manager = time_mgr;
 
     font = TTF_OpenFont("../fonts/sans.ttf", 13);
     if (!font) std::cerr << "Console: failed to open font: " << TTF_GetError() << std::endl;
@@ -108,6 +111,10 @@ void Console::execute(const std::string& cmd)
         log("regen <0|1|2>   regen current map (0=maze 1=garden 2=cage)");
         log("wave spawn      force next wave");
         log("wave info       show current wave status");
+        log("time set <h> <m> set time to hour:minute");
+        log("time info       show current time and phase");
+        log("time phase <p>  force time phase (day/dusk/night/dawn)");
+        log("time advance    advance to next day");
     }
     // ---- tp ----
     else if (token == "tp")
@@ -211,6 +218,95 @@ void Console::execute(const std::string& cmd)
         else
         {
             log("usage: wave <spawn|info>");
+        }
+    }
+    // ---- time ----
+    else if (token == "time")
+    {
+        std::string subcommand;
+        if (ss >> subcommand)
+        {
+            if (subcommand == "set")
+            {
+                int hour, minute;
+                if (ss >> hour >> minute)
+                {
+                    if (time_manager)
+                    {
+                        time_manager->set_time(hour, minute);
+                        log("time set to " + time_manager->get_time_string() + 
+                            " (" + time_manager->get_phase_string() + ")");
+                    }
+                    else
+                    {
+                        log("time manager not initialized");
+                    }
+                }
+                else log("usage: time set <hour> <minute>");
+            }
+            else if (subcommand == "info")
+            {
+                if (time_manager)
+                {
+                    log("Current time: " + time_manager->get_time_string());
+                    log("Phase: " + time_manager->get_phase_string());
+                    log("Day: " + std::to_string(time_manager->get_day_number()));
+                    log("Difficulty: x" + std::to_string(time_manager->get_difficulty_multiplier()));
+                }
+                else
+                {
+                    log("time manager not initialized");
+                }
+            }
+            else if (subcommand == "phase")
+            {
+                std::string phase_str;
+                if (ss >> phase_str)
+                {
+                    if (time_manager)
+                    {
+                        TimePhase phase = TimePhase::DAY;
+                        if (phase_str == "day") phase = TimePhase::DAY;
+                        else if (phase_str == "dusk") phase = TimePhase::DUSK;
+                        else if (phase_str == "night") phase = TimePhase::NIGHT;
+                        else if (phase_str == "dawn") phase = TimePhase::DAWN;
+                        else {
+                            log("invalid phase. use: day, dusk, night, dawn");
+                            return;
+                        }
+                        
+                        time_manager->force_phase(phase);
+                        log("forced phase to " + time_manager->get_phase_string());
+                    }
+                    else
+                    {
+                        log("time manager not initialized");
+                    }
+                }
+                else log("usage: time phase <day|dusk|night|dawn>");
+            }
+            else if (subcommand == "advance")
+            {
+                if (time_manager)
+                {
+                    int old_day = time_manager->get_day_number();
+                    time_manager->advance_to_next_day();
+                    log("advanced from day " + std::to_string(old_day) + 
+                        " to day " + std::to_string(time_manager->get_day_number()));
+                }
+                else
+                {
+                    log("time manager not initialized");
+                }
+            }
+            else
+            {
+                log("usage: time <set|info|phase|advance>");
+            }
+        }
+        else
+        {
+            log("usage: time <set|info|phase|advance>");
         }
     }
     else

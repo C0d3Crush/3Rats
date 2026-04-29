@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/c0d3_cru5h/Developer/3Rats/3Rats/src/cmake_install.cmake",
+		"/Users/c0d3_cru5h/Developer/3Rats/3Rats/src/tests/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

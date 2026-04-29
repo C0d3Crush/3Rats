@@ -25,6 +25,8 @@
 #include "WaveNotification.h"
 #include "TimeManager.h"
 #include "TimeDisplay.h"
+#include "GameOverScreen.h"
+#include "DayEvaluationScreen.h"
 
 static constexpr int MAX_ENEMIES = 50;
 
@@ -436,6 +438,13 @@ int main(int argc, char* argv[])
 	// Initialize time display UI
 	TimeDisplay time_display;
 	time_display.init(renderTarget, &time_manager);
+	
+	// Initialize game state screens
+	GameOverScreen game_over_screen;
+	game_over_screen.init(renderTarget, &time_manager);
+	
+	DayEvaluationScreen day_evaluation_screen;
+	day_evaluation_screen.init(renderTarget, &time_manager, player_array, player_amount);
 
 	Metrics metrics;
 	metrics.init(renderTarget, player_array, player_amount, &topography);
@@ -448,7 +457,8 @@ int main(int argc, char* argv[])
 	             item_array,   item_amount,
 	             tile_array,   tile_amount,
 	             &wave_manager,
-	             enemy_array, MAX_ENEMIES);
+	             enemy_array, MAX_ENEMIES,
+	             &time_manager);
 
 	// ===================================================================================
 
@@ -555,6 +565,25 @@ int main(int argc, char* argv[])
 		
 		// Update time display
 		time_display.update();
+		
+		// Handle game state transitions
+		GameState current_state = time_manager.get_game_state();
+		
+		if (current_state == GameState::GAME_OVER) {
+			game_over_screen.show();
+		}
+		else if (current_state == GameState::DAY_EVALUATION) {
+			day_evaluation_screen.show();
+		}
+		
+		// Update game state screens
+		game_over_screen.update(delta);
+		day_evaluation_screen.update(delta);
+		
+		// Handle automatic progression
+		if (day_evaluation_screen.should_continue()) {
+			time_manager.advance_to_next_day();
+		}
 
 		player_array[0].Update(delta, keyState, mode, player_array[2]);
 		for (int i = 1; i < player_amount; i++)
@@ -612,6 +641,8 @@ int main(int argc, char* argv[])
 		damage_manager.draw(renderTarget);
 		wave_notification.draw_notification(renderTarget);
 		time_display.draw(renderTarget);
+		game_over_screen.draw(renderTarget);
+		day_evaluation_screen.draw(renderTarget);
 		metrics.draw();
 		console.draw();
 
