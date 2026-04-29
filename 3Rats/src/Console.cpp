@@ -361,13 +361,95 @@ void Console::cmd_spawn_item(const std::vector<std::string>& args)
         return;
     }
     
-    // For now, maintain compatibility with old 'give' command
-    if (args[1] == "item" && args[2] == "food") {
-        player_array[0].debug_give_item(item_array, item_amount);
-        log("gave food item to rat 0");
+    std::string item_type = args[2];
+    
+    // Create ItemEffect based on type
+    ItemEffect effect;
+    std::string type_name;
+    
+    if (item_type == "food") {
+        effect = ItemEffect(ItemType::FOOD, 50.0f, 0.0f, true);
+        type_name = "food";
+    } else if (item_type == "speed") {
+        effect = ItemEffect(ItemType::SPEED_BOOST, 100.0f, 5.0f, false);
+        type_name = "speed boost";
+    } else if (item_type == "shield") {
+        effect = ItemEffect(ItemType::SHIELD, 1.0f, 10.0f, false);
+        type_name = "shield";
+    } else if (item_type == "damage") {
+        effect = ItemEffect(ItemType::DAMAGE_ORB, 25.0f, 0.0f, true);
+        type_name = "damage orb";
     } else {
-        log("enhanced item spawning not yet implemented");
-        log("currently only 'spawn item food' works (same as old 'give' command)");
+        log("unknown item type: " + item_type);
+        log("available types: food, speed, shield, damage");
+        return;
+    }
+    
+    // Determine target rat (default to rat 0)
+    int rat_id = 0;
+    if (args.size() > 3) {
+        try {
+            rat_id = std::stoi(args[3]);
+            if (rat_id < 0 || rat_id >= player_amount) {
+                log("invalid rat id: " + args[3] + " (valid: 0-" + std::to_string(player_amount - 1) + ")");
+                return;
+            }
+        } catch (const std::exception& e) {
+            log("invalid rat id: " + std::string(e.what()));
+            return;
+        }
+    }
+    
+    // Check if coordinates are provided for world spawn
+    if (args.size() >= 6) {
+        try {
+            int x = std::stoi(args[4]);
+            int y = std::stoi(args[5]);
+            
+            // Find an available item slot in the world
+            for (int i = 0; i < item_amount; i++) {
+                if (!item_array[i].get_on_map()) {
+                    item_array[i].set_effect(effect);
+                    item_array[i].set_on_map(true);
+                    item_array[i].set_cords(x * 64, y * 64);  // Convert tile coords to pixel coords
+                    log("spawned " + type_name + " at tile (" + std::to_string(x) + "," + std::to_string(y) + ")");
+                    return;
+                }
+            }
+            log("no available item slots on map");
+        } catch (const std::exception& e) {
+            log("invalid coordinates: " + std::string(e.what()));
+        }
+    } else {
+        // Give item directly to rat (old behavior)
+        bool success = false;
+        
+        // Use the existing debug_give_item for food compatibility
+        if (item_type == "food") {
+            player_array[rat_id].debug_give_item(item_array, item_amount);
+            success = true;
+        } else {
+            // For other items, try to find an available item and give it to the rat
+            for (int i = 0; i < item_amount; i++) {
+                if (!item_array[i].get_on_map()) {
+                    item_array[i].set_effect(effect);
+                    // This might need a different approach - the current system may not support
+                    // directly giving items to rats. For now, spawn near the rat.
+                    int rat_x = player_array[rat_id].get_origin_x();
+                    int rat_y = player_array[rat_id].get_origin_y();
+                    item_array[i].set_on_map(true);
+                    item_array[i].set_cords(rat_x + 32, rat_y + 32);  // Slightly offset from rat
+                    success = true;
+                    break;
+                }
+            }
+        }
+        
+        if (success) {
+            log("spawned " + type_name + " for rat " + std::to_string(rat_id));
+        } else {
+            log("failed to spawn item - no available slots");
+        }
     }
 }
 
@@ -518,12 +600,167 @@ void Console::cmd_time(const std::vector<std::string>& args)
 
 void Console::cmd_actor(const std::vector<std::string>& args)
 {
-    log("actor commands not yet implemented");
-    log("planned: actor <health|teleport|effects> <rat_id> [args...]");
+    if (args.size() < 3) {
+        log("usage: actor <health|teleport|effects|speed> <rat_id> [args...]");
+        return;
+    }
+    
+    std::string subcommand = args[1];
+    
+    // Parse rat ID
+    int rat_id;
+    try {
+        rat_id = std::stoi(args[2]);
+        if (rat_id < 0 || rat_id >= player_amount) {
+            log("invalid rat id: " + args[2] + " (valid: 0-" + std::to_string(player_amount - 1) + ")");
+            return;
+        }
+    } catch (const std::exception& e) {
+        log("invalid rat id: " + std::string(e.what()));
+        return;
+    }
+    
+    if (subcommand == "health") {
+        if (args.size() < 4) {
+            int current_health = player_array[rat_id].get_saturation();
+            log("rat " + std::to_string(rat_id) + " health: " + std::to_string(current_health) + "%");
+            log("usage: actor health <rat_id> <value>");
+            return;
+        }
+        
+        try {
+            int new_health = std::stoi(args[3]);
+            if (new_health < 0) new_health = 0;
+            if (new_health > 100) new_health = 100;
+            
+            int current_health = player_array[rat_id].get_saturation();
+            int health_change = new_health - current_health;
+            
+            // Use reduce_saturation with negative value to increase health
+            player_array[rat_id].reduce_saturation(-health_change);
+            
+            log("rat " + std::to_string(rat_id) + " health set to " + std::to_string(new_health) + "%");
+        } catch (const std::exception& e) {
+            log("invalid health value: " + std::string(e.what()));
+        }
+    }
+    else if (subcommand == "teleport") {
+        if (args.size() < 5) {
+            log("usage: actor teleport <rat_id> <x> <y>");
+            return;
+        }
+        
+        try {
+            int x = std::stoi(args[3]);
+            int y = std::stoi(args[4]);
+            
+            player_array[rat_id].set_cords(x * 64, y * 64);
+            log("teleported rat " + std::to_string(rat_id) + " to tile (" + 
+                std::to_string(x) + "," + std::to_string(y) + ")");
+        } catch (const std::exception& e) {
+            log("invalid coordinates: " + std::string(e.what()));
+        }
+    }
+    else if (subcommand == "speed") {
+        if (args.size() < 4) {
+            log("usage: actor speed <rat_id> <value>");
+            return;
+        }
+        
+        try {
+            float speed = std::stof(args[3]);
+            player_array[rat_id].set_move_speed(speed);
+            log("rat " + std::to_string(rat_id) + " speed set to " + std::to_string((int)speed));
+        } catch (const std::exception& e) {
+            log("invalid speed value: " + std::string(e.what()));
+        }
+    }
+    else if (subcommand == "effects") {
+        if (args.size() < 4) {
+            log("usage: actor effects <rat_id> <list|clear>");
+            log("       actor effects <rat_id> add <type> <value> <duration>");
+            return;
+        }
+        
+        std::string effect_cmd = args[3];
+        if (effect_cmd == "list") {
+            log("active effects listing not yet implemented");
+        } else if (effect_cmd == "clear") {
+            log("effect clearing not yet implemented");
+        } else if (effect_cmd == "add") {
+            log("effect addition not yet implemented");
+        } else {
+            log("unknown effects command: " + effect_cmd);
+            log("available: list, clear, add");
+        }
+    }
+    else {
+        log("unknown actor command: " + subcommand);
+        log("available: health, teleport, speed, effects");
+    }
 }
 
 void Console::cmd_world(const std::vector<std::string>& args)
 {
-    log("world commands not yet implemented");
-    log("planned: world <seed|weather|lighting> [args...]");
+    if (args.size() < 2) {
+        log("usage: world <seed|info|lighting> [args...]");
+        return;
+    }
+    
+    std::string subcommand = args[1];
+    
+    if (subcommand == "seed") {
+        if (args.size() < 3) {
+            log("usage: world seed <number>");
+            log("regenerates world with specified seed");
+            return;
+        }
+        
+        try {
+            uint32_t seed = std::stoul(args[2]);
+            log("world regeneration with custom seed not yet implemented");
+            log("requested seed: " + std::to_string(seed));
+        } catch (const std::exception& e) {
+            log("invalid seed: " + std::string(e.what()));
+        }
+    }
+    else if (subcommand == "info") {
+        log("Current world info:");
+        log("  Total maps: " + std::to_string(map_amount));
+        log("  Current map: " + std::to_string(topography->get_current_map_id()));
+        if (topography->get_current_map_id() < map_amount) {
+            int map_type = map_array[topography->get_current_map_id()].get_type();
+            std::string type_name = (map_type == 0) ? "maze" : 
+                                  (map_type == 1) ? "garden" : 
+                                  (map_type == 2) ? "cage" : "unknown";
+            log("  Current map type: " + std::to_string(map_type) + " (" + type_name + ")");
+        }
+        log("  Total items: " + std::to_string(item_amount));
+        log("  Active enemies: checking...");
+        
+        int active_enemies = 0;
+        for (int i = 0; i < max_enemies; i++) {
+            if (enemy_array && enemy_array[i].get_is_active()) {
+                active_enemies++;
+            }
+        }
+        log("  Active enemies: " + std::to_string(active_enemies) + "/" + std::to_string(max_enemies));
+    }
+    else if (subcommand == "lighting") {
+        if (args.size() < 3) {
+            log("usage: world lighting <day|night|custom>");
+            log("lighting override not yet implemented");
+            return;
+        }
+        log("lighting control not yet implemented");
+        log("requested: " + args[2]);
+    }
+    else if (subcommand == "weather") {
+        log("weather system not yet implemented");
+        log("planned: world weather <clear|rain|storm>");
+    }
+    else {
+        log("unknown world command: " + subcommand);
+        log("available: seed, info, lighting, weather");
+    }
 }
