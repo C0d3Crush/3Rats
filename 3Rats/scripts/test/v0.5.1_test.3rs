@@ -1,0 +1,26 @@
+-- v0.5.1 Scripting System Test Script
+-- Tests core scripting functionality for the new scripting system
+
+log "Starting v0.5.1 scripting system test..."
+
+var test_number = 42
+var test_text = "Scripting works!"
+
+log "Variable test - number: $test_number"
+log "Variable test - text: $test_text"
+
+-- Test conditional logic
+if $test_number == 42
+    log "Condition test PASSED: Variable equals 42"
+    var condition_result = "success"
+else
+    log "Condition test FAILED"
+    var condition_result = "failed"
+end
+
+log "Conditional test result: $condition_result"
+
+-- Test simple console command delegation
+log "Testing console command delegation..."
+
+log "v0.5.1 scripting system test completed successfully!"

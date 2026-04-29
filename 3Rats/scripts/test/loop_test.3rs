@@ -1,0 +1,13 @@
+-- Loop test script
+-- Tests while loop functionality with manual iteration
+
+log "Starting loop test..."
+
+var should_continue = true
+
+while $should_continue == true
+    log "Loop iteration executed"
+    var should_continue = false
+end
+
+log "Loop test completed - loop executed once as expected"

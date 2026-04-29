@@ -1,0 +1,35 @@
+-- Test script to validate safety system
+-- This script intentionally contains both valid and invalid commands
+
+log "Testing script safety validation system..."
+
+-- Valid commands that should pass
+teleport 0 100 100
+actor health 1 75
+time set 14 30
+time speed 2.0
+
+-- Invalid commands that should be blocked
+log "Attempting invalid commands (should be blocked):"
+
+-- Invalid actor ID
+teleport 5 100 100
+actor health 10 50
+
+-- Invalid coordinates (outside safe bounds)
+teleport 0 10000 -500
+
+-- Invalid health value
+actor health 0 150
+
+-- Invalid time values
+time set 25 70
+time set -5 30
+
+-- Dangerous time speed
+time speed 50.0
+
+-- Blocked dangerous commands
+shutdown
+
+log "Safety validation test complete!"

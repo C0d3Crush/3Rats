@@ -1,0 +1,30 @@
+-- Moon phase and night setup scenario
+-- Prepares the game for night gameplay testing
+
+log "Setting up moon phase scenario..."
+
+var target_hour = 22
+
+-- Set time to late night
+set time $target_hour 0
+log "Time set to $target_hour:00 (night time)"
+
+-- Prepare rats for night survival
+var initial_health = 90
+actor health 0 $initial_health
+actor health 1 $initial_health
+actor health 2 $initial_health
+
+log "Rats health set to $initial_health for night survival"
+
+-- Position rats in cage/entrance (safe for night time)
+var spawn_x = 50
+var spawn_y = 50
+
+teleport 0 $spawn_x $spawn_y
+teleport 1 $spawn_x $spawn_y
+teleport 2 $spawn_x $spawn_y
+
+log "Rats positioned in cage/entrance for night safety ($spawn_x, $spawn_y)"
+
+log "Moon phase scenario setup complete!"

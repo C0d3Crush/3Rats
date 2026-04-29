@@ -1,0 +1,48 @@
+-- Headless Test Script
+-- Tests script execution without requiring user interaction
+
+log "=== HEADLESS EXECUTION TEST ==="
+
+log "Testing automated script execution from command line..."
+
+var execution_type = "headless"
+var test_count = 5
+
+log "Test configuration:"
+log "  Type: $execution_type" 
+log "  Test count: $test_count"
+
+-- Test variable operations
+var counter = 1
+
+log "Starting test sequence..."
+
+-- Test multiple commands
+log "Test $counter: Variable assignment and substitution"
+var counter = 2
+
+log "Test $counter: Console command execution"
+teleport 0 100 150
+var counter = 3
+
+log "Test $counter: Health management"
+actor health 0 95
+var counter = 4
+
+log "Test $counter: Time manipulation"
+time set 15 30
+var counter = 5
+
+log "Test $counter: Conditional logic"
+if $counter == 5
+    log "  ✓ All tests completed successfully"
+    var final_status = "PASS"
+else
+    log "  ✗ Test sequence incomplete"
+    var final_status = "FAIL"
+end
+
+log "Final status: $final_status"
+log "Headless execution test complete"
+
+log "=== END HEADLESS TEST ==="

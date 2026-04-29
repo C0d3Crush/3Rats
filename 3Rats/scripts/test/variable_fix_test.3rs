@@ -1,0 +1,23 @@
+-- Variable Substitution Fix Test
+-- Tests that variables are properly substituted in log output
+
+log "Starting variable substitution fix test..."
+
+var test_number = 42
+var test_string = "Hello"
+var test_name = "TestRat"
+
+log "Variable substitution test:"
+log "Number: $test_number"
+log "String: $test_string"
+log "Name: $test_name"
+
+log "Combined: $test_name has $test_number health and says $test_string"
+
+if $test_number == 42
+    log "SUCCESS: Variable $test_number correctly substituted in condition"
+else
+    log "FAILED: Variable substitution failed in condition"
+end
+
+log "Test completed - check that variables show actual values, not $variable names"

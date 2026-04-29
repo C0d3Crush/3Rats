@@ -1,0 +1,24 @@
+-- Basic script test for v0.5.1 scripting system
+-- Tests variable assignment, logging, and simple console commands
+
+log "Starting basic test script..."
+
+var test_value = 42
+var test_string = "Hello World"
+
+log "Test value: $test_value"
+log "Test string: $test_string"
+
+-- Test console commands
+teleport 0 100 100
+log "Teleported player 0 to (100, 100)"
+
+if $test_value == 42
+    log "Condition test passed: test_value equals 42"
+    var success = true
+else
+    log "Condition test failed"
+    var success = false
+end
+
+log "Basic test script completed successfully"

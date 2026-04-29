@@ -1,0 +1,29 @@
+-- Startup Script Test
+-- Tests command-line script execution
+
+log "=== STARTUP SCRIPT TEST ==="
+
+log "This script was executed automatically on game startup!"
+
+var startup_time = "game_initialization"
+var test_mode = "command_line_execution"
+
+log "Startup Information:"
+log "  Execution time: $startup_time"
+log "  Test mode: $test_mode"
+
+-- Test that game systems are ready
+teleport 0 75 75
+log "✓ Teleport command executed successfully"
+
+actor health 0 100
+log "✓ Actor health command executed successfully"
+
+time set 12 0
+log "✓ Time command executed successfully"
+
+-- Log completion
+var status = "SUCCESS"
+log "Startup script completed with status: $status"
+
+log "=== COMMAND-LINE EXECUTION VERIFIED ==="

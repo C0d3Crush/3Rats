@@ -1,0 +1,66 @@
+-- Logging Verification Test Script
+-- Comprehensive test to verify both console and log file output
+
+log "===== LOGGING VERIFICATION TEST START ====="
+
+log "Testing basic logging functionality..."
+
+var test_phase = "initialization"
+log "Current test phase: $test_phase"
+
+-- Test variable logging
+var test_number = 123
+var test_string = "Hello World"
+var test_boolean = true
+
+log "Variable tests:"
+log "  Number: $test_number"
+log "  String: $test_string"  
+log "  Boolean: $test_boolean"
+
+-- Test conditional with logging
+var test_phase = "conditionals"
+log "Current test phase: $test_phase"
+
+if $test_number > 100
+    log "  ✓ Conditional test PASSED: $test_number > 100"
+    var conditional_result = "PASS"
+else
+    log "  ✗ Conditional test FAILED: $test_number <= 100"
+    var conditional_result = "FAIL"
+end
+
+log "  Conditional result: $conditional_result"
+
+-- Test console command integration with logging
+var test_phase = "console_commands"  
+log "Current test phase: $test_phase"
+
+log "Testing console command integration:"
+log "  Executing: teleport 0 200 200"
+teleport 0 200 200
+
+log "  Executing: time set 10 30"
+time set 10 30
+
+log "  Executing: actor health 0 85"
+actor health 0 85
+
+-- Test logging of script state
+log "Script execution state verification:"
+log "  Active variables: test_number=$test_number, test_string=$test_string"
+log "  Last conditional result: $conditional_result"
+log "  Current phase: $test_phase"
+
+-- Reset state for clean ending
+log "Resetting state for clean test completion..."
+time set 16 30
+teleport 0 50 50
+actor health 0 80
+
+log "===== LOGGING VERIFICATION TEST COMPLETE ====="
+log "Check console output AND logs/system/init.log for [SCRIPT] entries"
+
+-- Final status
+var final_status = "SUCCESS"
+log "Test completed with status: $final_status"

@@ -1,0 +1,23 @@
+-- Utility script to clear and reset game state
+-- Useful for starting fresh during development
+
+log "Clearing game state..."
+
+-- Teleport all rats to entrance
+teleport 0 50 50
+teleport 1 50 50
+teleport 2 50 50
+
+-- Teleport cat away
+teleport 3 4000 4000
+
+-- Reset time
+time set 16 30
+time speed 1.0
+
+-- Reset rat health
+actor health 0 80
+actor health 1 80
+actor health 2 80
+
+log "Game state cleared and reset!"

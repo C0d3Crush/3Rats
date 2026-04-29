@@ -1,0 +1,68 @@
+-- 3Rats v0.5.1 Scripting System Showcase
+-- Demonstrates various scripting capabilities
+
+log "===== 3Rats v0.5.1 Scripting System Showcase ====="
+
+-- Variable demonstration
+var game_version = "v0.5.1"
+var player_name = "Demo Player"
+var demo_step = 1
+
+log "Welcome to $game_version scripting demo!"
+log "Player: $player_name"
+
+-- Step 1: Time manipulation
+log "Step $demo_step: Time manipulation"
+var demo_step = 2
+
+time set 8 0
+log "Set time to morning (08:00)"
+
+time speed 2.0
+log "Increased time speed to 2x"
+
+-- Step 2: Actor management
+log "Step $demo_step: Actor positioning and health"
+var demo_step = 3
+
+var safe_x = 150
+var safe_y = 150
+
+teleport 0 $safe_x $safe_y
+teleport 1 $safe_x $safe_y
+teleport 2 $safe_x $safe_y
+
+log "Positioned all rats at safe coordinates ($safe_x, $safe_y)"
+
+actor health 0 95
+actor health 1 95
+actor health 2 95
+
+log "Set all rat health to 95"
+
+-- Step 3: Conditional logic demonstration
+log "Step $demo_step: Conditional logic test"
+var demo_step = 4
+
+var test_value = 100
+
+if $test_value >= 100
+    log "Condition TRUE: test_value ($test_value) is >= 100"
+    var condition_status = "passed"
+else
+    log "Condition FALSE: test_value is < 100"
+    var condition_status = "failed"
+end
+
+log "Condition test status: $condition_status"
+
+-- Step 4: Safety reset
+log "Step $demo_step: Resetting to safe state"
+
+time speed 1.0
+time set 16 30
+
+log "Reset time speed to normal and time to 16:30"
+
+log "===== Scripting showcase completed successfully! ====="
+log "v0.5.1 scripting system is fully functional"

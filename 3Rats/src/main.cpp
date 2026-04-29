@@ -27,8 +27,87 @@
 #include "TimeDisplay.h"
 #include "GameOverScreen.h"
 #include "DayEvaluationScreen.h"
+#include "ScriptManager.h"
+#include <vector>
 
 static constexpr int MAX_ENEMIES = 50;
+
+struct StartupConfig {
+    std::vector<std::string> scripts_to_run;
+    bool show_help = false;
+    bool autostart_scripts = false;
+};
+
+StartupConfig parse_command_line(int argc, char* argv[])
+{
+    StartupConfig config;
+    
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        
+        if (arg == "--help" || arg == "-h") {
+            config.show_help = true;
+        }
+        else if (arg == "--script" || arg == "-s") {
+            if (i + 1 < argc) {
+                config.scripts_to_run.push_back(argv[i + 1]);
+                i++; // Skip the script name argument
+                config.autostart_scripts = true;
+            } else {
+                std::cerr << "Error: --script requires a script name\n";
+            }
+        }
+        else if (arg.substr(0, 9) == "--script=") {
+            std::string script = arg.substr(9);
+            if (!script.empty()) {
+                config.scripts_to_run.push_back(script);
+                config.autostart_scripts = true;
+            }
+        }
+        else {
+            std::cerr << "Warning: Unknown argument '" << arg << "'\n";
+        }
+    }
+    
+    return config;
+}
+
+void print_usage(const char* program_name)
+{
+    std::cout << "3Rats Game - Usage:\n";
+    std::cout << "  " << program_name << " [options]\n\n";
+    std::cout << "Options:\n";
+    std::cout << "  -h, --help              Show this help message\n";
+    std::cout << "  -s, --script <name>     Run script on startup (can be used multiple times)\n";
+    std::cout << "  --script=<name>         Run script on startup (alternative syntax)\n\n";
+    std::cout << "Script Examples:\n";
+    std::cout << "  " << program_name << " --script debug/god_mode\n";
+    std::cout << "  " << program_name << " -s scenarios/demo_showcase\n";
+    std::cout << "  " << program_name << " --script=test/basic_test --script=utils/clear_all\n\n";
+    std::cout << "Available script categories: debug, scenarios, utils, test\n";
+}
+
+void execute_startup_scripts(ScriptManager* script_manager, const std::vector<std::string>& scripts)
+{
+    if (scripts.empty()) {
+        return;
+    }
+    
+    Logger::info(Logger::SCRIPT_EXEC, "Executing " + std::to_string(scripts.size()) + " startup script(s)");
+    
+    for (const auto& script_name : scripts) {
+        Logger::info(Logger::SCRIPT_EXEC, "Startup script: " + script_name);
+        
+        bool success = script_manager->execute_script(script_name);
+        if (success) {
+            Logger::info(Logger::SCRIPT_EXEC, "Startup script completed: " + script_name);
+        } else {
+            Logger::error(Logger::SCRIPT_EXEC, "Startup script failed: " + script_name);
+        }
+    }
+    
+    Logger::info(Logger::SCRIPT_EXEC, "All startup scripts processed");
+}
 
 int world_seed_generation(bool value)
 {
@@ -279,6 +358,15 @@ uint32_t generate_seed(int seed_generation)
 
 int main(int argc, char* argv[])
 {
+	// Parse command line arguments
+	StartupConfig config = parse_command_line(argc, argv);
+	
+	// Show help and exit if requested
+	if (config.show_help) {
+		print_usage(argv[0]);
+		return 0;
+	}
+	
 	// Initiallaizing and loading variables
 	SDL_Window* window = nullptr;
 	SDL_Renderer* renderTarget = nullptr;
@@ -450,6 +538,7 @@ int main(int argc, char* argv[])
 	metrics.init(renderTarget, player_array, player_amount, &topography);
 
 	Console console;
+	ScriptManager script_manager(&console);
 	console.init(renderTarget,
 	             player_array, player_amount,
 	             map_array,    map_amount,
@@ -458,7 +547,13 @@ int main(int argc, char* argv[])
 	             tile_array,   tile_amount,
 	             &wave_manager,
 	             enemy_array, MAX_ENEMIES,
-	             &time_manager);
+	             &time_manager,
+	             &script_manager);
+
+	// Execute startup scripts if provided via command line
+	if (config.autostart_scripts) {
+		execute_startup_scripts(&script_manager, config.scripts_to_run);
+	}
 
 	// ===================================================================================
 

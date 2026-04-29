@@ -172,7 +172,44 @@ void TimeManager::set_time(int hour, int minute)
     spacetime = 0.0;
     hours = hour;
     minutes = minute;
-    update_phase();
+    
+    // Reset game state to active when manually setting time
+    // This prevents day evaluation loops when scripts change time
+    game_state = GameState::ACTIVE;
+    evaluation_timer = 0.0f;
+    warning_timer = 0.0f;
+    warning_shown = false;
+    
+    // Update phase without triggering day evaluation for manual time changes
+    TimePhase old_phase = current_phase;
+    
+    if (hours >= DAWN_HOUR && hours < DAY_START_HOUR) {
+        current_phase = TimePhase::DAWN;
+    } else if (hours >= DAY_START_HOUR && hours < DUSK_HOUR) {
+        current_phase = TimePhase::DAY;
+    } else if (hours >= DUSK_HOUR && hours < NIGHT_HOUR) {
+        current_phase = TimePhase::DUSK;
+    } else {
+        current_phase = TimePhase::NIGHT;
+    }
+    
+    // Log phase changes but don't trigger day evaluation for manual time changes
+    if (old_phase != current_phase) {
+        Logger::info(Logger::SYS, "Time phase changed to " + get_phase_string() + " at " + get_time_string());
+        
+        // Show notifications for important phase changes (but not day evaluation)
+        if (notification_system) {
+            if (current_phase == TimePhase::DUSK) {
+                notification_system->show_notification("DUSK APPROACHES - RETURN TO CAGE SOON!");
+            } else if (current_phase == TimePhase::NIGHT) {
+                notification_system->show_notification("NIGHT HAS FALLEN!");
+            } else if (current_phase == TimePhase::DAWN) {
+                notification_system->show_notification("DAWN BREAKS - NEW DAY BEGINS!");
+                // Don't trigger day evaluation for manual time changes
+            }
+        }
+    }
+    
     Logger::info(Logger::SYS, "Time manually set to " + get_time_string());
 }
 

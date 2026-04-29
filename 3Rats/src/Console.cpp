@@ -2,6 +2,7 @@
 #include "WaveManager.h"
 #include "Enemy.h"
 #include "TimeManager.h"
+#include "ScriptManager.h"
 #include <sstream>
 #include <iostream>
 
@@ -17,7 +18,7 @@ Console::Console()
       topography(nullptr),
       item_array(nullptr),  item_amount(0),
       tile_array(nullptr),  tile_amount(0),
-      wave_manager(nullptr), enemy_array(nullptr), max_enemies(0), time_manager(nullptr)
+      wave_manager(nullptr), enemy_array(nullptr), max_enemies(0), time_manager(nullptr), script_manager(nullptr)
 {}
 
 Console::~Console()
@@ -33,7 +34,8 @@ void Console::init(SDL_Renderer* rend,
                    Tile*   tiles,   int t_amount,
                    WaveManager* wave_mgr,
                    Enemy*  enemies, int max_enemy_count,
-                   TimeManager* time_mgr)
+                   TimeManager* time_mgr,
+                   ScriptManager* script_mgr)
 {
     renderer     = rend;
     player_array = players;  player_amount = p_amount;
@@ -44,6 +46,7 @@ void Console::init(SDL_Renderer* rend,
     wave_manager = wave_mgr;
     enemy_array  = enemies;  max_enemies   = max_enemy_count;
     time_manager = time_mgr;
+    script_manager = script_mgr;
 
     font = TTF_OpenFont("../fonts/sans.ttf", 13);
     if (!font) std::cerr << "Console: failed to open font: " << TTF_GetError() << std::endl;
@@ -57,6 +60,11 @@ void Console::log(const std::string& msg)
     history.push_back(msg);
     if ((int)history.size() > MAX_HISTORY)
         history.erase(history.begin());
+}
+
+void Console::add_log_message(const std::string& msg)
+{
+    log(msg);  // Use the existing private log method
 }
 
 void Console::handle_event(const SDL_Event& e)
@@ -214,6 +222,13 @@ void Console::setup_commands()
         "world manipulation commands",  
         "world <seed|weather|lighting> [args...]",
         {}
+    });
+    
+    register_command("script", {
+        [this](const std::vector<std::string>& args) { cmd_script(args); },
+        "script execution and management",
+        "script <run|list|vars|stop> [args...]",
+        {"scr"}
     });
 }
 
@@ -792,5 +807,99 @@ void Console::cmd_world(const std::vector<std::string>& args)
     else {
         log("unknown world command: " + subcommand);
         log("available: seed, info, lighting, weather");
+    }
+}
+
+void Console::cmd_script(const std::vector<std::string>& args)
+{
+    if (args.size() < 2) {
+        log("usage: script <run|list|vars|stop> [args...]");
+        return;
+    }
+    
+    std::string subcommand = args[1];
+    
+    if (subcommand == "run") {
+        if (args.size() < 3) {
+            log("usage: script run <script_name>");
+            return;
+        }
+        
+        if (!script_manager) {
+            log("script manager not initialized");
+            return;
+        }
+        
+        std::string script_name = args[2];
+        log("executing script: " + script_name);
+        
+        bool success = script_manager->execute_script(script_name);
+        if (success) {
+            log("script completed successfully");
+        } else {
+            log("script execution failed");
+        }
+    }
+    else if (subcommand == "list") {
+        if (!script_manager) {
+            log("script manager not initialized");
+            return;
+        }
+        
+        auto scripts = script_manager->get_available_scripts();
+        if (scripts.empty()) {
+            log("no scripts found");
+        } else {
+            log("available scripts:");
+            for (const auto& script : scripts) {
+                std::string line = "  ";
+                if (!script.category.empty()) {
+                    line += script.category + "/";
+                }
+                line += script.filename;
+                if (!script.description.empty()) {
+                    line += " - " + script.description;
+                }
+                log(line);
+            }
+        }
+    }
+    else if (subcommand == "vars") {
+        if (!script_manager) {
+            log("script manager not initialized");
+            return;
+        }
+        
+        auto variables = script_manager->get_script_variables();
+        if (variables.empty()) {
+            log("no script variables set");
+        } else {
+            log("script variables:");
+            for (const auto& [name, value] : variables) {
+                log("  " + name + " = " + value);
+            }
+        }
+    }
+    else if (subcommand == "stop") {
+        if (!script_manager) {
+            log("script manager not initialized");
+            return;
+        }
+        
+        script_manager->stop_current_script();
+        log("script execution stopped");
+    }
+    else if (subcommand == "clear") {
+        if (!script_manager) {
+            log("script manager not initialized");
+            return;
+        }
+        
+        script_manager->clear_script_variables();
+        log("script variables cleared");
+    }
+    else {
+        log("unknown script command: " + subcommand);
+        log("available: run, list, vars, stop, clear");
     }
 }

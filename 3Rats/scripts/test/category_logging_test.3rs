@@ -1,0 +1,48 @@
+-- Category-Based Logging Test
+-- Tests the new SCRIPT logging channel separation
+
+log "=== CATEGORY LOGGING TEST ==="
+
+log "Testing category-based logging system..."
+log "This script tests the separation of script logs from system logs"
+
+var test_id = 999
+var category = "SCRIPT"
+
+log "Test Information:"
+log "  Test ID: $test_id"  
+log "  Log Category: $category"
+log "  Expected Location: logs/scripting/script.log"
+
+-- Test console command logging
+log "Testing console command logging..."
+teleport 0 200 200
+actor health 0 90
+time set 15 45
+
+log "Console commands executed - should appear in script.log"
+
+-- Test variable operations
+var health = 85
+var position = "safe_zone"
+
+log "Variable tests:"
+log "  Health: $health"
+log "  Position: $position"
+
+-- Test conditional with logging
+if $health > 80
+    log "✓ Conditional test PASSED: health ($health) > 80"
+else
+    log "✗ Conditional test FAILED: health ($health) <= 80"
+end
+
+log "=== VERIFICATION INSTRUCTIONS ==="
+log "After running this script, check the following:"
+log "1. Console shows [SCRIPT] messages immediately"
+log "2. logs/scripting/script.log contains all script activity"  
+log "3. logs/system/init.log contains ONLY system messages"
+log "4. Script logs are separated by category for better organization"
+
+log "Category logging test complete!"
+log "=== END TEST ==="
